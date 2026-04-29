@@ -5,12 +5,6 @@ export async function GET() {
   return Response.json(variableExpenses)
 }
 
-import prisma from "@/lib/prisma"
-
-export async function GET() {
-  const variableExpenses = await prisma.variableExpense.findMany()
-  return Response.json(variableExpenses)
-}
 
 export async function POST(request) {
   const body = await request.json()
