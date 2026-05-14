@@ -36,6 +36,8 @@ model FixedPayment {
   date           DateTime
   paid           Boolean      @default(false)
   createdAt      DateTime     @default(now())
+
+  @@unique([fixedExpenseId, date], name: "fixedExpenseId_date")
 }
 
 // GastoVariable
