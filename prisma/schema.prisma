@@ -8,14 +8,15 @@ datasource db {
 }
 
 // Nomina
-model Payroll {           
-  id            Int      @id @default(autoincrement())
-  date          DateTime
-  week          Int
+model Payroll {
+  id             Int      @id @default(autoincrement())
+  date           DateTime
+  week           Int
   amountReceived Float
-  isr           Float
-  notes         String?
-  createdAt     DateTime @default(now())
+  isr            Float
+  savingsFund    Float    @default(0)
+  notes          String?
+  createdAt      DateTime @default(now())
 }
 
 //GastoFijo

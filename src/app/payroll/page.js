@@ -5,19 +5,19 @@ import { useState, useEffect, Fragment, useRef } from "react"
 export default function Payroll() {
   const [payrolls, setPayrolls] = useState([])
   const [form, setForm] = useState({
-    date: '', week: '', amountReceived: '', isr: '', notes: ''
+    date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: ''
   })
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({
-    date: '', week: '', amountReceived: '', isr: '', notes: ''
+    date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: ''
   })
 
   const weekRef = useRef(null)
   const amountRef = useRef(null)
   const isrRef = useRef(null)
+  const savingsRef = useRef(null)
   const notesRef = useRef(null)
 
-  //Funcion que solicita la info a la api
   const fetchPayrolls = async () => {
     const response = await fetch('/api/payroll')
     const data = await response.json()
@@ -28,7 +28,6 @@ export default function Payroll() {
     fetchPayrolls()
   }, [])
 
-  //Funcion para hacer un registro
   const handleSubmit = async () => {
     if (!form.date || !form.week || !form.amountReceived || !form.isr) {
       alert('Please fill in all required fields')
@@ -42,13 +41,13 @@ export default function Payroll() {
         ...form,
         week: parseInt(form.week),
         amountReceived: parseFloat(form.amountReceived),
-        isr: parseFloat(form.isr)
+        isr: parseFloat(form.isr),
+        savingsFund: parseFloat(form.savingsFund || 0)
       })
     })
-    setForm({ date: '', week: '', amountReceived: '', isr: '', notes: '' })
+    setForm({ date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: '' })
     fetchPayrolls()
   }
-
 
   const handleEdit = (payroll) => {
     setEditingId(payroll.id)
@@ -57,11 +56,11 @@ export default function Payroll() {
       week: payroll.week,
       amountReceived: payroll.amountReceived,
       isr: payroll.isr,
+      savingsFund: payroll.savingsFund,
       notes: payroll.notes || ''
     })
   }
 
-  //Funcion para editar un registro
   const handleUpdate = async (id) => {
     await fetch(`/api/payroll/${id}`, {
       method: 'PUT',
@@ -70,21 +69,20 @@ export default function Payroll() {
         ...editForm,
         week: parseInt(editForm.week),
         amountReceived: parseFloat(editForm.amountReceived),
-        isr: parseFloat(editForm.isr)
+        isr: parseFloat(editForm.isr),
+        savingsFund: parseFloat(editForm.savingsFund || 0)
       })
     })
     setEditingId(null)
     fetchPayrolls()
   }
 
-  //Funcion para eliminar un registro
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this payroll?')) return
     await fetch(`/api/payroll/${id}`, { method: 'DELETE' })
     fetchPayrolls()
   }
 
-  //Funcion para agrupar las nominas por meses
   const groupPayrollsByMonth = (payrolls) => {
     const grouped = {}
 
@@ -102,7 +100,6 @@ export default function Payroll() {
     return grouped
   }
 
-  //Funcino para agrupar los meses en orden cronologico
   const sortedGroupedPayrolls = (payrolls) => {
     const grouped = groupPayrollsByMonth(payrolls)
     const sorted = {}
@@ -122,56 +119,62 @@ export default function Payroll() {
       <div className="mb-8">
         <h2 className="text-lg font-semibold mb-4">New Payroll</h2>
         <div className="flex flex-col gap-3 max-w-md">
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
+          <input 
+            type="date" 
+            value={form.date} 
+            onChange={(e) => setForm({...form, date: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && weekRef.current?.focus()}
-            className="border p-2 rounded"
+            className="border p-2 rounded" 
           />
-
-          <input
-            type="number"
+          <input 
+            type="number" 
             ref={weekRef}
-            placeholder="Week"
-            value={form.week}
+            placeholder="Week" 
+            value={form.week} 
             onChange={(e) => {
               const val = e.target.value;
               if (val.length <= 1) {
-                setForm({ ...form, week: val });
+                setForm({...form, week: val});
               }
-            }} onKeyDown={(e) => e.key === 'Enter' && amountRef.current?.focus()}
-            className="border p-2 rounded"
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && amountRef.current?.focus()}
+            className="border p-2 rounded" 
           />
-
-          <input
-            type="number"
+          <input 
+            type="number" 
             ref={amountRef}
-            placeholder="Amount Received"
-            value={form.amountReceived}
-            onChange={(e) => setForm({ ...form, amountReceived: e.target.value })}
+            placeholder="Amount Received" 
+            value={form.amountReceived} 
+            onChange={(e) => setForm({...form, amountReceived: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && isrRef.current?.focus()}
-            className="border p-2 rounded"
+            className="border p-2 rounded" 
           />
-
-          <input
-            type="number"
+          <input 
+            type="number" 
             ref={isrRef}
-            placeholder="ISR"
-            value={form.isr}
-            onChange={(e) => setForm({ ...form, isr: e.target.value })}
-            onKeyDown={(e) => e.key === 'Enter' && notesRef.current?.focus()}
-            className="border p-2 rounded"
+            placeholder="ISR" 
+            value={form.isr} 
+            onChange={(e) => setForm({...form, isr: e.target.value})}
+            onKeyDown={(e) => e.key === 'Enter' && savingsRef.current?.focus()}
+            className="border p-2 rounded" 
           />
-
-          <input
-            type="text"
+          <input 
+            type="number" 
+            ref={savingsRef}
+            placeholder="Savings Fund" 
+            value={form.savingsFund} 
+            onChange={(e) => setForm({...form, savingsFund: e.target.value})}
+            onKeyDown={(e) => e.key === 'Enter' && notesRef.current?.focus()}
+            className="border p-2 rounded" 
+          />
+          <input 
+            type="text" 
             ref={notesRef}
-            placeholder="Notes"
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            placeholder="Notes" 
+            value={form.notes} 
+            onChange={(e) => setForm({...form, notes: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            className="border p-2 rounded"
+            className="border p-2 rounded" 
           />
           <button onClick={handleSubmit} className="bg-blue-600 text-white p-2 rounded">Save</button>
         </div>
@@ -186,6 +189,7 @@ export default function Payroll() {
               <th className="border p-2 text-left">Week</th>
               <th className="border p-2 text-left">Amount</th>
               <th className="border p-2 text-left">ISR</th>
+              <th className="border p-2 text-left">Savings Fund</th>
               <th className="border p-2 text-left">Notes</th>
               <th className="border p-2 text-left">Actions</th>
             </tr>
@@ -194,7 +198,7 @@ export default function Payroll() {
             {Object.entries(sortedGroupedPayrolls(payrolls)).map(([monthKey, group]) => (
               <Fragment key={monthKey}>
                 <tr className="bg-blue-100">
-                  <td colSpan="6" className="border p-2 font-bold text-blue-700">
+                  <td colSpan="7" className="border p-2 font-bold text-blue-700">
                     {group.monthName}
                   </td>
                 </tr>
@@ -202,31 +206,37 @@ export default function Payroll() {
                   <tr key={payroll.id}>
                     <td className="border p-2">
                       {editingId === payroll.id
-                        ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} className="border p-1 rounded" />
+                        ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} className="border p-1 rounded" />
                         : new Date(payroll.date).toLocaleDateString()
                       }
                     </td>
                     <td className="border p-2">
                       {editingId === payroll.id
-                        ? <input type="number" value={editForm.week} onChange={(e) => setEditForm({ ...editForm, week: e.target.value })} className="border p-1 rounded w-16" />
+                        ? <input type="number" value={editForm.week} onChange={(e) => setEditForm({...editForm, week: e.target.value})} className="border p-1 rounded w-16" />
                         : payroll.week
                       }
                     </td>
                     <td className="border p-2">
                       {editingId === payroll.id
-                        ? <input type="number" value={editForm.amountReceived} onChange={(e) => setEditForm({ ...editForm, amountReceived: e.target.value })} className="border p-1 rounded w-24" />
+                        ? <input type="number" value={editForm.amountReceived} onChange={(e) => setEditForm({...editForm, amountReceived: e.target.value})} className="border p-1 rounded w-24" />
                         : `$${payroll.amountReceived}`
                       }
                     </td>
                     <td className="border p-2">
                       {editingId === payroll.id
-                        ? <input type="number" value={editForm.isr} onChange={(e) => setEditForm({ ...editForm, isr: e.target.value })} className="border p-1 rounded w-24" />
+                        ? <input type="number" value={editForm.isr} onChange={(e) => setEditForm({...editForm, isr: e.target.value})} className="border p-1 rounded w-24" />
                         : `$${payroll.isr}`
                       }
                     </td>
                     <td className="border p-2">
                       {editingId === payroll.id
-                        ? <input type="text" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="border p-1 rounded" />
+                        ? <input type="number" value={editForm.savingsFund} onChange={(e) => setEditForm({...editForm, savingsFund: e.target.value})} className="border p-1 rounded w-24" />
+                        : `$${payroll.savingsFund}`
+                      }
+                    </td>
+                    <td className="border p-2">
+                      {editingId === payroll.id
+                        ? <input type="text" value={editForm.notes} onChange={(e) => setEditForm({...editForm, notes: e.target.value})} className="border p-1 rounded" />
                         : payroll.notes
                       }
                     </td>

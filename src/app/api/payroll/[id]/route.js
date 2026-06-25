@@ -10,6 +10,7 @@ export async function PUT(request, { params }) {
       week: body.week,
       amountReceived: body.amountReceived,
       isr: body.isr,
+      savingsFund: body.savingsFund || 0,
       notes: body.notes
     }
   })
