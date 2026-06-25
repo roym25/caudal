@@ -6,7 +6,7 @@ export async function PUT(request, { params }) {
   const payroll = await prisma.payroll.update({
     where: { id: parseInt(id) },
     data: {
-      date: new Date(body.date),
+      date: new Date(body.date + 'T12:00:00Z'),
       week: body.week,
       amountReceived: body.amountReceived,
       isr: body.isr,
