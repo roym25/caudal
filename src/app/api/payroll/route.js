@@ -9,7 +9,7 @@ export async function POST(request) {
   const body = await request.json()
   const payroll = await prisma.payroll.create({
     data: {
-      date: new Date(body.date),
+      date: new Date(body.date + 'T12:00:00Z'),
       week: body.week,
       amountReceived: body.amountReceived,
       isr: body.isr,
