@@ -18,3 +18,4 @@ export function serverError(message = 'Internal server error') {
   console.error('[API Error]', message)
   return Response.json({ error: message }, { status: 500 })
 }
+
