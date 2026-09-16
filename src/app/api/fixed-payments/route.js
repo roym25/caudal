@@ -1,32 +1,34 @@
 import prisma from "@/lib/prisma"
+import { validateFixedPayment } from "@/lib/validate"
+import { success, badRequest, serverError } from "@/lib/api-response"
 
 export async function POST(request) {
-  const body = await request.json()
-  const date = new Date(body.date)
-
-  const existing = await prisma.fixedPayment.findFirst({
-    where: {
-      fixedExpenseId: body.fixedExpenseId,
-      date: date
+  try {
+    const body = await request.json()
+    const validation = validateFixedPayment(body)
+    if (!validation.valid) {
+      return badRequest(validation.errors)
     }
-  })
 
-  let payment
+    const { fixedExpenseId, date, paid } = validation.data
 
-  if (existing) {
-    payment = await prisma.fixedPayment.update({
-      where: { id: existing.id },
-      data: { paid: body.paid }
+    const payment = await prisma.fixedPayment.upsert({
+      where: {
+        fixedExpenseId_date: {
+          fixedExpenseId,
+          date,
+        },
+      },
+      update: { paid },
+      create: {
+        fixedExpenseId,
+        date,
+        paid,
+      },
     })
-  } else {
-    payment = await prisma.fixedPayment.create({
-      data: {
-        fixedExpenseId: body.fixedExpenseId,
-        date: date,
-        paid: body.paid
-      }
-    })
+
+    return success(payment)
+  } catch (error) {
+    return serverError(error.message)
   }
-
-  return Response.json(payment)
 }
