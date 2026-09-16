@@ -1,22 +1,21 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
+import nextConfig from "eslint-config-next";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    "src/generated/**",
-  ]),
+const eslintConfig = [
+  ...nextConfig,
+  {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+      "src/generated/**",
+    ],
+  },
   {
     rules: {
       "react-hooks/set-state-in-effect": "off",
     },
   },
-]);
+];
 
 export default eslintConfig;
