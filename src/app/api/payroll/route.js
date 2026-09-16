@@ -1,21 +1,31 @@
 import prisma from "@/lib/prisma"
+import { validatePayroll } from "@/lib/validate"
+import { success, created, badRequest, serverError } from "@/lib/api-response"
 
 export async function GET() {
-  const payrolls = await prisma.payroll.findMany()
-  return Response.json(payrolls)
+  try {
+    const payrolls = await prisma.payroll.findMany({
+      orderBy: { date: "desc" },
+    })
+    return success(payrolls)
+  } catch (error) {
+    return serverError(error.message)
+  }
 }
 
 export async function POST(request) {
-  const body = await request.json()
-  const payroll = await prisma.payroll.create({
-    data: {
-      date: new Date(body.date + 'T12:00:00Z'),
-      week: body.week,
-      amountReceived: body.amountReceived,
-      isr: body.isr,
-      savingsFund: body.savingsFund || 0,
-      notes: body.notes
+  try {
+    const body = await request.json()
+    const validation = validatePayroll(body)
+    if (!validation.valid) {
+      return badRequest(validation.errors)
     }
-  })
-  return Response.json(payroll)
+
+    const payroll = await prisma.payroll.create({
+      data: validation.data,
+    })
+    return created(payroll)
+  } catch (error) {
+    return serverError(error.message)
+  }
 }
