@@ -2,9 +2,14 @@
 
 import { useState, useEffect, Fragment, useRef } from "react"
 import { formatMoney, formatDate } from "@/lib/format"
+import Toast from "@/components/Toast"
+import EmptyState from "@/components/EmptyState"
+import LoadingTable from "@/components/LoadingTable"
 
 export default function Payroll() {
   const [payrolls, setPayrolls] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState(null)
   const [form, setForm] = useState({
     date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: ''
   })
@@ -19,8 +24,13 @@ export default function Payroll() {
   const savingsRef = useRef(null)
   const notesRef = useRef(null)
 
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type })
+  }
+
   const fetchPayrolls = async () => {
     try {
+      setLoading(true)
       const response = await fetch('/api/payroll')
       const data = await response.json()
       if (Array.isArray(data)) {
@@ -28,6 +38,9 @@ export default function Payroll() {
       }
     } catch (err) {
       console.error("Error fetching payrolls:", err)
+      showToast('Error loading payrolls', 'error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -37,12 +50,12 @@ export default function Payroll() {
 
   const handleSubmit = async () => {
     if (!form.date || !form.week || !form.amountReceived || !form.isr) {
-      alert('Please fill in all required fields')
+      showToast('Please fill in all required fields', 'error')
       return
     }
 
     try {
-      await fetch('/api/payroll', {
+      const res = await fetch('/api/payroll', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -50,13 +63,22 @@ export default function Payroll() {
           week: parseInt(form.week, 10),
           amountReceived: parseFloat(form.amountReceived),
           isr: parseFloat(form.isr),
-          savingsFund: parseFloat(form.savingsFund || 0),
-        }),
+          savingsFund: parseFloat(form.savingsFund || 0)
+        })
       })
+
+      if (!res.ok) {
+        const err = await res.json()
+        showToast(err.errors?.join(', ') || 'Failed to save payroll', 'error')
+        return
+      }
+
       setForm({ date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: '' })
+      showToast('Payroll record added successfully')
       fetchPayrolls()
     } catch (err) {
       console.error("Error creating payroll:", err)
+      showToast('Network error while saving', 'error')
     }
   }
 
@@ -68,13 +90,13 @@ export default function Payroll() {
       amountReceived: payroll.amountReceived,
       isr: payroll.isr,
       savingsFund: payroll.savingsFund,
-      notes: payroll.notes || '',
+      notes: payroll.notes || ''
     })
   }
 
   const handleUpdate = async (id) => {
     try {
-      await fetch(`/api/payroll/${id}`, {
+      const res = await fetch(`/api/payroll/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -82,23 +104,38 @@ export default function Payroll() {
           week: parseInt(editForm.week, 10),
           amountReceived: parseFloat(editForm.amountReceived),
           isr: parseFloat(editForm.isr),
-          savingsFund: parseFloat(editForm.savingsFund || 0),
-        }),
+          savingsFund: parseFloat(editForm.savingsFund || 0)
+        })
       })
+
+      if (!res.ok) {
+        const err = await res.json()
+        showToast(err.errors?.join(', ') || 'Failed to update payroll', 'error')
+        return
+      }
+
       setEditingId(null)
+      showToast('Payroll updated successfully')
       fetchPayrolls()
     } catch (err) {
       console.error("Error updating payroll:", err)
+      showToast('Network error while updating', 'error')
     }
   }
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this payroll?')) return
     try {
-      await fetch(`/api/payroll/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/payroll/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        showToast('Failed to delete payroll', 'error')
+        return
+      }
+      showToast('Payroll deleted successfully')
       fetchPayrolls()
     } catch (err) {
       console.error("Error deleting payroll:", err)
+      showToast('Network error while deleting', 'error')
     }
   }
 
@@ -203,86 +240,104 @@ export default function Payroll() {
 
       <div>
         <h2 className="text-lg font-semibold mb-4">Payroll History</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse min-w-[700px]">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2 text-left">Date</th>
-                <th className="border p-2 text-left">Week</th>
-                <th className="border p-2 text-left">Amount</th>
-                <th className="border p-2 text-left">ISR</th>
-                <th className="border p-2 text-left">Savings Fund</th>
-                <th className="border p-2 text-left">Notes</th>
-                <th className="border p-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(sortedGroupedPayrolls(payrolls)).map(([monthKey, group]) => (
-                <Fragment key={monthKey}>
-                  <tr className="bg-blue-50">
-                    <td colSpan="7" className="border p-2 font-bold text-blue-800">
-                      {group.monthName}
-                    </td>
-                  </tr>
-                  {group.payrolls.map((payroll) => (
-                    <tr key={payroll.id}>
-                      <td className="border p-2">
-                        {editingId === payroll.id
-                          ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} className="border p-1 rounded" />
-                          : formatDate(payroll.date)
-                        }
-                      </td>
-                      <td className="border p-2">
-                        {editingId === payroll.id
-                          ? <input type="number" value={editForm.week} onChange={(e) => setEditForm({...editForm, week: e.target.value})} className="border p-1 rounded w-16" />
-                          : payroll.week
-                        }
-                      </td>
-                      <td className="border p-2 font-medium">
-                        {editingId === payroll.id
-                          ? <input type="number" value={editForm.amountReceived} onChange={(e) => setEditForm({...editForm, amountReceived: e.target.value})} className="border p-1 rounded w-24" />
-                          : formatMoney(payroll.amountReceived)
-                        }
-                      </td>
-                      <td className="border p-2 text-red-600">
-                        {editingId === payroll.id
-                          ? <input type="number" value={editForm.isr} onChange={(e) => setEditForm({...editForm, isr: e.target.value})} className="border p-1 rounded w-24" />
-                          : formatMoney(payroll.isr)
-                        }
-                      </td>
-                      <td className="border p-2 text-green-700">
-                        {editingId === payroll.id
-                          ? <input type="number" value={editForm.savingsFund} onChange={(e) => setEditForm({...editForm, savingsFund: e.target.value})} className="border p-1 rounded w-24" />
-                          : formatMoney(payroll.savingsFund)
-                        }
-                      </td>
-                      <td className="border p-2 text-gray-600">
-                        {editingId === payroll.id
-                          ? <input type="text" value={editForm.notes} onChange={(e) => setEditForm({...editForm, notes: e.target.value})} className="border p-1 rounded w-full" />
-                          : (payroll.notes || '—')
-                        }
-                      </td>
-                      <td className="border p-2">
-                        {editingId === payroll.id ? (
-                          <div className="flex gap-1">
-                            <button onClick={() => handleUpdate(payroll.id)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium">Save</button>
-                            <button onClick={() => setEditingId(null)} className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs font-medium">Cancel</button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-1">
-                            <button onClick={() => handleEdit(payroll)} className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs font-medium">Edit</button>
-                            <button onClick={() => handleDelete(payroll.id)} className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium">Delete</button>
-                          </div>
-                        )}
+
+        {loading ? (
+          <LoadingTable columns={7} rows={4} />
+        ) : payrolls.length === 0 ? (
+          <EmptyState 
+            message="No payroll records registered" 
+            action="Fill in the form above to add your first payroll payment." 
+          />
+        ) : (
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="w-full border-collapse min-w-[700px]">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-2 text-left">Date</th>
+                  <th className="border p-2 text-left">Week</th>
+                  <th className="border p-2 text-left">Amount</th>
+                  <th className="border p-2 text-left">ISR</th>
+                  <th className="border p-2 text-left">Savings Fund</th>
+                  <th className="border p-2 text-left">Notes</th>
+                  <th className="border p-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(sortedGroupedPayrolls(payrolls)).map(([monthKey, group]) => (
+                  <Fragment key={monthKey}>
+                    <tr className="bg-blue-50">
+                      <td colSpan="7" className="border p-2 font-bold text-blue-800">
+                        {group.monthName}
                       </td>
                     </tr>
-                  ))}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {group.payrolls.map((payroll) => (
+                      <tr key={payroll.id} className="hover:bg-gray-50">
+                        <td className="border p-2">
+                          {editingId === payroll.id
+                            ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} className="border p-1 rounded" />
+                            : formatDate(payroll.date)
+                          }
+                        </td>
+                        <td className="border p-2">
+                          {editingId === payroll.id
+                            ? <input type="number" value={editForm.week} onChange={(e) => setEditForm({...editForm, week: e.target.value})} className="border p-1 rounded w-16" />
+                            : payroll.week
+                          }
+                        </td>
+                        <td className="border p-2 font-medium">
+                          {editingId === payroll.id
+                            ? <input type="number" value={editForm.amountReceived} onChange={(e) => setEditForm({...editForm, amountReceived: e.target.value})} className="border p-1 rounded w-24" />
+                            : formatMoney(payroll.amountReceived)
+                          }
+                        </td>
+                        <td className="border p-2 text-red-600">
+                          {editingId === payroll.id
+                            ? <input type="number" value={editForm.isr} onChange={(e) => setEditForm({...editForm, isr: e.target.value})} className="border p-1 rounded w-24" />
+                            : formatMoney(payroll.isr)
+                          }
+                        </td>
+                        <td className="border p-2 text-green-700">
+                          {editingId === payroll.id
+                            ? <input type="number" value={editForm.savingsFund} onChange={(e) => setEditForm({...editForm, savingsFund: e.target.value})} className="border p-1 rounded w-24" />
+                            : formatMoney(payroll.savingsFund)
+                          }
+                        </td>
+                        <td className="border p-2 text-gray-600">
+                          {editingId === payroll.id
+                            ? <input type="text" value={editForm.notes} onChange={(e) => setEditForm({...editForm, notes: e.target.value})} className="border p-1 rounded w-full" />
+                            : (payroll.notes || '?')
+                          }
+                        </td>
+                        <td className="border p-2">
+                          {editingId === payroll.id ? (
+                            <div className="flex gap-1">
+                              <button onClick={() => handleUpdate(payroll.id)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium">Save</button>
+                              <button onClick={() => setEditingId(null)} className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs font-medium">Cancel</button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-1">
+                              <button onClick={() => handleEdit(payroll)} className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs font-medium">Edit</button>
+                              <button onClick={() => handleDelete(payroll.id)} className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium">Delete</button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </main>
   )
 }
