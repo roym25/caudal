@@ -3,19 +3,37 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #f9fafb;
+  --card-border: #e5e7eb;
+  --table-header: #f3f4f6;
+  --table-border: #e5e7eb;
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-table-header: var(--table-header);
+  --color-table-border: var(--table-border);
+  --color-input-bg: var(--input-bg);
+  --color-input-border: var(--input-border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0d1117;
+    --foreground: #f0f6fc;
+    --card-bg: #161b22;
+    --card-border: #30363d;
+    --table-header: #21262d;
+    --table-border: #30363d;
+    --input-bg: #161b22;
+    --input-border: #30363d;
   }
 }
 
@@ -23,6 +41,17 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+input, select, textarea {
+  background-color: var(--input-bg);
+  color: var(--foreground);
+  border-color: var(--input-border);
+}
+
+input::placeholder, textarea::placeholder {
+  color: #8b949e;
 }
 
 @keyframes fadeIn {
