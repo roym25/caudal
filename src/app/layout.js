@@ -21,10 +21,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex bg-caudal-bg text-caudal-text relative">
-        {/* Kanagawa Wave Watermark Background (Option A) */}
+        {/* Kanagawa Dark Wave Texture Background */}
         <div
-          className="fixed inset-0 pointer-events-none z-0 opacity-15 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url("/wave-bg.jpg")' }}
+          className="fixed inset-0 pointer-events-none z-0 opacity-25 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url("/wave-bg.png")' }}
           aria-hidden="true"
         />
         <Sidebar />

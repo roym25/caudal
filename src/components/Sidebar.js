@@ -38,10 +38,15 @@ export default function Sidebar() {
 
       {/* Sidebar Content */}
       <div className={`fixed top-0 left-0 h-full w-60 bg-caudal-surface border-r border-caudal-border z-50 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-caudal-border">
-          <Link href="/" className="flex items-center" onClick={() => setIsOpen(false)}>
-            <span className="font-bold text-xl text-caudal-green tracking-tight">Caudal</span>
+        {/* Header with Caudal Wave Logo */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-caudal-border">
+          <Link href="/" className="flex items-center py-1 group" onClick={() => setIsOpen(false)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/caudal-logo.png"
+              alt="Caudal"
+              className="h-10 w-auto max-w-[155px] object-contain group-hover:brightness-110 transition-all"
+            />
           </Link>
           <button 
             className="md:hidden text-caudal-text-muted hover:text-caudal-text"
@@ -74,9 +79,10 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-caudal-border">
-          <p className="text-center text-xs text-caudal-text-dim">v2.0</p>
+        {/* Minimal Footer */}
+        <div className="px-5 py-4 border-t border-caudal-border flex items-center justify-between text-xs text-caudal-text-dim">
+          <span>v2.0</span>
+          <span className="text-[11px] text-caudal-text-dim">Caudal OS</span>
         </div>
       </div>
     </>
