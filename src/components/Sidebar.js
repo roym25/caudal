@@ -38,18 +38,21 @@ export default function Sidebar() {
 
       {/* Sidebar Content */}
       <div className={`fixed top-0 left-0 h-full w-60 bg-caudal-surface border-r border-caudal-border z-50 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-        {/* Header with Caudal Wave Logo */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-caudal-border">
-          <Link href="/" className="flex items-center py-1 group" onClick={() => setIsOpen(false)}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/caudal-logo.png"
-              alt="Caudal"
-              className="h-10 w-auto max-w-[155px] object-contain group-hover:brightness-110 transition-all"
-            />
+        {/* Header - Option C with Custom Caudal Wave Emblem */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-caudal-border">
+          <Link href="/" className="flex items-center group w-full" onClick={() => setIsOpen(false)}>
+            <div className="w-full rounded-xl overflow-hidden border border-caudal-border bg-black/70 px-3 py-2 flex items-center justify-center shadow-sm group-hover:border-caudal-green/50 transition-all">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/caudal-logo.png"
+                alt="Caudal"
+                className="h-9 w-auto max-w-[150px] object-contain group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
           </Link>
+
           <button 
-            className="md:hidden text-caudal-text-muted hover:text-caudal-text"
+            className="md:hidden text-caudal-text-muted hover:text-caudal-text ml-2 flex-shrink-0"
             onClick={() => setIsOpen(false)}
           >
             <XMarkIcon className="w-6 h-6" />
