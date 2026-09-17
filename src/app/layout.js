@@ -20,9 +20,15 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex bg-caudal-bg text-caudal-text">
+      <body className="min-h-full flex bg-caudal-bg text-caudal-text relative">
+        {/* Kanagawa Wave Watermark Background (Option A) */}
+        <div
+          className="fixed inset-0 pointer-events-none z-0 opacity-15 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url("/wave-bg.jpg")' }}
+          aria-hidden="true"
+        />
         <Sidebar />
-        <main className="flex-1 overflow-y-auto min-h-screen md:ml-60 w-full">
+        <main className="flex-1 overflow-y-auto min-h-screen md:ml-60 w-full relative z-10">
           {children}
         </main>
       </body>
