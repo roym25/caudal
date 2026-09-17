@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import TopNavbar from '@/components/TopNavbar';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -13,18 +14,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: 'Caudal',
+  title: 'Caudal | Dashboard',
   description: 'Personal finance tracker',
+  icons: {
+    icon: [
+      { url: '/icon.png' },
+      { url: '/favicon.ico' },
+    ],
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex bg-caudal-bg text-caudal-text">
+      <body className="min-h-full flex text-caudal-text">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto min-h-screen md:ml-60 w-full">
-          {children}
-        </main>
+        <div className="flex-1 min-h-screen md:ml-60 w-full flex flex-col">
+          <TopNavbar />
+          <main className="flex-1 overflow-y-auto w-full">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

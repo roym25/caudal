@@ -19,19 +19,20 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile hamburger button */}
-      <div className="md:hidden fixed top-0 left-0 p-4 z-40">
+      <div className="md:hidden fixed top-3 left-3 z-40">
         <button
           onClick={() => setIsOpen(true)}
-          className="p-2 rounded-md text-caudal-text-muted hover:text-caudal-text bg-caudal-surface border border-caudal-border shadow-sm focus:outline-none"
+          className="p-2 rounded-lg text-caudal-text-muted hover:text-caudal-text bg-caudal-surface/90 backdrop-blur-md border border-caudal-border shadow-md focus:outline-none"
+          aria-label="Open menu"
         >
-          <MenuIcon className="w-6 h-6" />
+          <MenuIcon className="w-5 h-5" />
         </button>
       </div>
 
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/50 z-50 transition-opacity"
+          className="md:hidden fixed inset-0 bg-black/60 z-50 transition-opacity backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -40,13 +41,13 @@ export default function Sidebar() {
       <div className={`fixed top-0 left-0 h-full w-60 bg-caudal-surface border-r border-caudal-border z-50 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         {/* Header - Option C with Custom Caudal Wave Emblem */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-caudal-border">
-          <Link href="/" className="flex items-center group w-full" onClick={() => setIsOpen(false)}>
-            <div className="w-full rounded-xl overflow-hidden border border-caudal-border bg-black/70 px-3 py-2 flex items-center justify-center shadow-sm group-hover:border-caudal-green/50 transition-all">
+          <Link href="/" className="flex items-center justify-center group w-full" onClick={() => setIsOpen(false)}>
+            <div className="w-full rounded-xl overflow-hidden border border-caudal-border/80 bg-black/70 px-3 py-2.5 flex items-center justify-center shadow-md group-hover:border-caudal-green/50 transition-all">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/caudal-logo.png"
                 alt="Caudal"
-                className="h-9 w-auto max-w-[150px] object-contain group-hover:scale-105 transition-transform duration-300"
+                className="h-12 w-auto max-w-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-md"
               />
             </div>
           </Link>
@@ -71,12 +72,12 @@ export default function Sidebar() {
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 px-6 py-3 transition-colors duration-200 ${
                   isActive 
-                    ? 'border-l-2 border-caudal-green bg-caudal-surface-alt text-caudal-text' 
+                    ? 'border-l-2 border-caudal-green bg-caudal-surface-alt text-caudal-text font-semibold' 
                     : 'border-l-2 border-transparent text-caudal-text-muted hover:bg-caudal-surface-alt hover:text-caudal-text'
                 }`}
               >
                 <Icon className={`w-5 h-5 ${isActive ? 'text-caudal-green' : ''}`} />
-                <span className="font-medium">{link.label}</span>
+                <span>{link.label}</span>
               </Link>
             );
           })}

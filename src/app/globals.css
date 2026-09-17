@@ -61,7 +61,12 @@
    ═══════════════════════════════════════════ */
 
 body {
-  background: var(--caudal-bg);
+  background-color: #0F0F0F;
+  background-image: linear-gradient(rgba(15, 15, 15, 0.60), rgba(15, 15, 15, 0.60)), url('/wave-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--caudal-text);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   min-height: 100vh;
