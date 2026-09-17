@@ -1,52 +1,62 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from "react"
-import { formatMoney } from "@/lib/format"
-import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "@/components/icons"
-import Toast from "@/components/Toast"
-import EmptyState from "@/components/EmptyState"
-import LoadingTable from "@/components/LoadingTable"
+import { useState, useEffect } from 'react';
+import { formatMoney } from '@/lib/format';
+import {
+  PencilIcon,
+  TrashIcon,
+  CheckIcon,
+  XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlusIcon,
+} from '@/components/icons';
+import Toast from '@/components/Toast';
+import EmptyState from '@/components/EmptyState';
+import LoadingTable from '@/components/LoadingTable';
+import SlidePanel from '@/components/SlidePanel';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export default function FixedExpenses() {
-  const [fixedExpenses, setFixedExpenses] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState(null)
-  const [showForm, setShowForm] = useState(false)
-  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear())
-  const [form, setForm] = useState({ name: '', cost: '', dueDay: '' })
-  const [editingId, setEditingId] = useState(null)
-  const [editForm, setEditForm] = useState({ name: '', cost: '', dueDay: '' })
+export default function FixedExpensesPage() {
+  const [fixedExpenses, setFixedExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
+  const [form, setForm] = useState({ name: '', cost: '', dueDay: '' });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', cost: '', dueDay: '' });
 
   const showToast = (message, type = 'success') => {
-    setToast({ message, type })
-  }
+    setToast({ message, type });
+  };
 
   const fetchFixedExpenses = async () => {
     try {
-      setLoading(true)
-      const response = await fetch('/api/fixed-expenses')
-      const data = await response.json()
+      setLoading(true);
+      const response = await fetch('/api/fixed-expenses');
+      const data = await response.json();
       if (Array.isArray(data)) {
-        setFixedExpenses(data)
+        setFixedExpenses(data);
       }
     } catch (err) {
-      console.error("Error fetching fixed expenses:", err)
-      showToast('Error loading fixed expenses', 'error')
+      console.error('Error fetching fixed expenses:', err);
+      showToast('Error loading fixed expenses', 'error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchFixedExpenses()
-  }, [])
+    fetchFixedExpenses();
+  }, []);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!form.name || !form.cost || !form.dueDay) {
-      showToast('Please fill in all fields', 'error')
-      return
+      showToast('Please fill in all fields', 'error');
+      return;
     }
 
     try {
@@ -58,28 +68,28 @@ export default function FixedExpenses() {
           cost: parseFloat(form.cost),
           dueDay: parseInt(form.dueDay, 10),
         }),
-      })
+      });
 
       if (!res.ok) {
-        const err = await res.json()
-        showToast(err.errors?.join(', ') || 'Failed to save fixed expense', 'error')
-        return
+        const err = await res.json();
+        showToast(err.errors?.join(', ') || 'Failed to save fixed expense', 'error');
+        return;
       }
 
-      setForm({ name: '', cost: '', dueDay: '' })
-      setShowForm(false)
-      showToast('Fixed expense added successfully')
-      fetchFixedExpenses()
+      setForm({ name: '', cost: '', dueDay: '' });
+      setShowForm(false);
+      showToast('Fixed expense added successfully');
+      fetchFixedExpenses();
     } catch (err) {
-      console.error("Error creating fixed expense:", err)
-      showToast('Network error while saving', 'error')
+      console.error('Error creating fixed expense:', err);
+      showToast('Network error while saving', 'error');
     }
-  }
+  };
 
   const handleEdit = (expense) => {
-    setEditingId(expense.id)
-    setEditForm({ name: expense.name, cost: expense.cost, dueDay: expense.dueDay })
-  }
+    setEditingId(expense.id);
+    setEditForm({ name: expense.name, cost: expense.cost, dueDay: expense.dueDay });
+  };
 
   const handleUpdate = async (id) => {
     try {
@@ -91,42 +101,42 @@ export default function FixedExpenses() {
           cost: parseFloat(editForm.cost),
           dueDay: parseInt(editForm.dueDay, 10),
         }),
-      })
+      });
 
       if (!res.ok) {
-        const err = await res.json()
-        showToast(err.errors?.join(', ') || 'Failed to update fixed expense', 'error')
-        return
+        const err = await res.json();
+        showToast(err.errors?.join(', ') || 'Failed to update fixed expense', 'error');
+        return;
       }
 
-      setEditingId(null)
-      showToast('Fixed expense updated successfully')
-      fetchFixedExpenses()
+      setEditingId(null);
+      showToast('Fixed expense updated successfully');
+      fetchFixedExpenses();
     } catch (err) {
-      console.error("Error updating fixed expense:", err)
-      showToast('Network error while updating', 'error')
+      console.error('Error updating fixed expense:', err);
+      showToast('Network error while updating', 'error');
     }
-  }
+  };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this expense?')) return
+    if (!confirm('Are you sure you want to delete this expense?')) return;
     try {
-      const res = await fetch(`/api/fixed-expenses/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/fixed-expenses/${id}`, { method: 'DELETE' });
       if (!res.ok) {
-        showToast('Failed to delete fixed expense', 'error')
-        return
+        showToast('Failed to delete fixed expense', 'error');
+        return;
       }
-      showToast('Fixed expense deleted successfully')
-      fetchFixedExpenses()
+      showToast('Fixed expense deleted successfully');
+      fetchFixedExpenses();
     } catch (err) {
-      console.error("Error deleting fixed expense:", err)
-      showToast('Network error while deleting', 'error')
+      console.error('Error deleting fixed expense:', err);
+      showToast('Network error while deleting', 'error');
     }
-  }
+  };
 
   const togglePayment = async (expenseId, monthIndex, isPaid) => {
-    const monthNum = String(monthIndex + 1).padStart(2, '0')
-    const dateStr = `${currentYear}-${monthNum}-01T12:00:00Z`
+    const monthNum = String(monthIndex + 1).padStart(2, '0');
+    const dateStr = `${currentYear}-${monthNum}-01T12:00:00Z`;
     try {
       const res = await fetch('/api/fixed-payments', {
         method: 'POST',
@@ -136,54 +146,59 @@ export default function FixedExpenses() {
           date: dateStr,
           paid: !isPaid,
         }),
-      })
+      });
       if (!res.ok) {
-        showToast('Failed to update payment status', 'error')
-        return
+        showToast('Failed to update payment status', 'error');
+        return;
       }
-      fetchFixedExpenses()
+      fetchFixedExpenses();
     } catch (err) {
-      console.error("Error toggling payment:", err)
-      showToast('Network error updating payment', 'error')
+      console.error('Error toggling payment:', err);
+      showToast('Network error updating payment', 'error');
     }
-  }
+  };
 
   const getPaymentForMonth = (payments, monthIndex) => {
-    if (!Array.isArray(payments)) return null
+    if (!Array.isArray(payments)) return null;
     return payments.find(p => {
-      const d = new Date(p.date)
-      return d.getUTCMonth() === monthIndex && d.getUTCFullYear() === currentYear
-    })
-  }
+      const d = new Date(p.date);
+      return d.getUTCMonth() === monthIndex && d.getUTCFullYear() === currentYear;
+    });
+  };
 
   const getTotalPaid = (expense) => {
     const paidCount = MONTHS.filter((_, monthIndex) => {
-      const payment = getPaymentForMonth(expense.payments, monthIndex)
-      return payment?.paid ?? false
-    }).length
-    return paidCount * (expense.cost || 0)
-  }
+      const payment = getPaymentForMonth(expense.payments, monthIndex);
+      return payment?.paid ?? false;
+    }).length;
+    return paidCount * (expense.cost || 0);
+  };
+
+  const annualTotal = fixedExpenses.reduce((acc, expense) => acc + getTotalPaid(expense), 0);
 
   return (
-    <main className="p-6 max-w-6xl mx-auto w-full text-gray-900">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="p-6 max-w-6xl mx-auto w-full space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Fixed Expenses</h1>
-          <div className="flex items-center gap-1.5">
+          <div>
+            <h1 className="text-2xl font-bold text-caudal-text">Fixed Expenses</h1>
+            <p className="text-sm text-caudal-text-muted mt-0.5">Recurring monthly bills & subscriptions</p>
+          </div>
+          <div className="flex items-center gap-1.5 ml-2">
             <button
               onClick={() => setCurrentYear(y => y - 1)}
-              className="p-1.5 bg-white hover:bg-gray-100 rounded border border-gray-300 text-gray-700 transition-colors"
+              className="p-1.5 bg-caudal-surface hover:bg-caudal-surface-alt rounded-lg border border-caudal-border text-caudal-text-muted hover:text-caudal-text transition-colors"
               title="Previous year"
               aria-label="Previous year"
             >
               <ChevronLeftIcon className="w-4 h-4" />
             </button>
-            <span className="text-base font-bold min-w-[3.5rem] text-center text-gray-900">
+            <span className="text-base font-bold min-w-[3.5rem] text-center text-caudal-text">
               {currentYear}
             </span>
             <button
               onClick={() => setCurrentYear(y => y + 1)}
-              className="p-1.5 bg-white hover:bg-gray-100 rounded border border-gray-300 text-gray-700 transition-colors"
+              className="p-1.5 bg-caudal-surface hover:bg-caudal-surface-alt rounded-lg border border-caudal-border text-caudal-text-muted hover:text-caudal-text transition-colors"
               title="Next year"
               aria-label="Next year"
             >
@@ -193,161 +208,178 @@ export default function FixedExpenses() {
         </div>
 
         <button
-          onClick={() => setShowForm(prev => !prev)}
-          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 shadow-sm self-start sm:self-auto ${
-            showForm
-              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
-          }`}
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-caudal-green text-black font-semibold rounded-lg hover:bg-opacity-90 transition-colors self-start sm:self-auto"
         >
-          {showForm ? (
-            <>
-              <XMarkIcon className="w-4 h-4" />
-              <span>Close Form</span>
-            </>
-          ) : (
-            <>
-              <PlusIcon className="w-4 h-4" />
-              <span>New Fixed Expense</span>
-            </>
-          )}
+          <PlusIcon className="w-4 h-4" />
+          New Fixed Expense
         </button>
       </div>
 
-      {showForm && (
-        <div className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50/70 animate-fade-in">
-          <h2 className="text-base font-semibold mb-3 text-gray-800">Add New Fixed Expense</h2>
-          <div className="flex flex-wrap gap-3 items-center">
+      <SlidePanel isOpen={showForm} onClose={() => setShowForm(false)} title="New Fixed Expense">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Expense Name</label>
             <input
               type="text"
-              placeholder="Name"
+              placeholder="e.g. Rent, Netflix, Internet"
               value={form.name}
-              onChange={(e) => setForm({...form, name: e.target.value})}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-48"
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors"
+              required
             />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Monthly Cost</label>
             <input
               type="number"
               step="0.01"
-              placeholder="Cost"
+              placeholder="0.00"
               value={form.cost}
-              onChange={(e) => setForm({...form, cost: e.target.value})}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-32"
+              onChange={(e) => setForm({ ...form, cost: e.target.value })}
+              className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors"
+              required
             />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Due Day of Month (1–31)</label>
             <input
               type="number"
-              placeholder="Due Day (1-31)"
+              min="1"
+              max="31"
+              placeholder="15"
               value={form.dueDay}
-              onChange={(e) => setForm({...form, dueDay: e.target.value})}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-36"
+              onChange={(e) => setForm({ ...form, dueDay: e.target.value })}
+              className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors"
+              required
             />
-            <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
-              Save
-            </button>
-            <button onClick={() => setShowForm(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded font-medium transition-colors">
-              Cancel
+          </div>
+          <div className="pt-4">
+            <button
+              type="submit"
+              className="w-full bg-caudal-green text-black font-semibold rounded-lg px-4 py-2.5 hover:bg-opacity-90 transition-colors"
+            >
+              Save Fixed Expense
             </button>
           </div>
-        </div>
-      )}
+        </form>
+      </SlidePanel>
 
       {loading ? (
-        <LoadingTable columns={15} rows={3} />
+        <LoadingTable columns={16} rows={3} />
       ) : fixedExpenses.length === 0 ? (
-        <EmptyState 
-          message="No fixed expenses defined yet" 
-          action="Click '+ New Fixed Expense' to add recurring bills or subscriptions." 
+        <EmptyState
+          message="No fixed expenses defined yet"
+          action="Click '+ New Fixed Expense' to add recurring bills or subscriptions."
         />
       ) : (
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="w-full border-collapse text-sm min-w-[1000px]">
-            <thead>
-              <tr className="bg-gray-100 text-gray-900">
-                <th className="border border-gray-200 p-2 text-left">Expense</th>
-                <th className="border border-gray-200 p-2 text-left">Cost</th>
-                <th className="border border-gray-200 p-2 text-left">Due</th>
+        <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm text-left whitespace-nowrap min-w-[1000px]">
+            <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
+              <tr>
+                <th className="px-4 py-3 font-medium">Expense</th>
+                <th className="px-4 py-3 text-right font-medium">Cost</th>
+                <th className="px-3 py-3 text-center font-medium">Due</th>
                 {MONTHS.map((month) => (
-                  <th key={month} className="border border-gray-200 p-2 text-center">{month}</th>
+                  <th key={month} className="px-2 py-3 text-center font-medium">{month}</th>
                 ))}
-                <th className="border border-gray-200 p-2 text-center bg-gray-200 font-semibold text-gray-900">Total Paid</th>
-                <th className="border border-gray-200 p-2 text-center w-24">Actions</th>
+                <th className="px-4 py-3 text-right font-medium text-caudal-green">Total Paid</th>
+                <th className="px-4 py-3 text-center font-medium w-24">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-caudal-border text-caudal-text">
               {fixedExpenses.map((expense) => (
-                <tr key={expense.id} className="hover:bg-gray-50 text-gray-900">
-                  <td className="border border-gray-200 p-2">
-                    {editingId === expense.id
-                      ? <input value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="border border-gray-300 p-1 rounded w-full bg-white text-gray-900" />
-                      : <span className="font-medium text-gray-900">{expense.name}</span>
-                    }
+                <tr key={expense.id} className="hover:bg-caudal-surface-alt/50 transition-colors">
+                  <td className="px-4 py-3">
+                    {editingId === expense.id ? (
+                      <input
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-caudal-text focus:outline-none focus:border-caudal-green w-full"
+                      />
+                    ) : (
+                      <span className="font-medium text-caudal-text">{expense.name}</span>
+                    )}
                   </td>
-                  <td className="border border-gray-200 p-2 font-medium text-gray-900">
-                    {editingId === expense.id
-                      ? <input type="number" value={editForm.cost} onChange={(e) => setEditForm({...editForm, cost: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
-                      : formatMoney(expense.cost)
-                    }
+                  <td className="px-4 py-3 text-right font-medium">
+                    {editingId === expense.id ? (
+                      <input
+                        type="number"
+                        value={editForm.cost}
+                        onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
+                        className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-right text-caudal-text focus:outline-none focus:border-caudal-green w-24"
+                      />
+                    ) : (
+                      formatMoney(expense.cost)
+                    )}
                   </td>
-                  <td className="border border-gray-200 p-2 text-gray-800">
-                    {editingId === expense.id
-                      ? <input type="number" value={editForm.dueDay} onChange={(e) => setEditForm({...editForm, dueDay: e.target.value})} className="border border-gray-300 p-1 rounded w-16 bg-white text-gray-900" />
-                      : expense.dueDay
-                    }
+                  <td className="px-3 py-3 text-center text-caudal-text-muted">
+                    {editingId === expense.id ? (
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={editForm.dueDay}
+                        onChange={(e) => setEditForm({ ...editForm, dueDay: e.target.value })}
+                        className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-center text-caudal-text focus:outline-none focus:border-caudal-green w-14"
+                      />
+                    ) : (
+                      expense.dueDay
+                    )}
                   </td>
                   {MONTHS.map((month, monthIndex) => {
-                    const payment = getPaymentForMonth(expense.payments, monthIndex)
-                    const isPaid = payment?.paid ?? false
+                    const payment = getPaymentForMonth(expense.payments, monthIndex);
+                    const isPaid = payment?.paid ?? false;
                     return (
-                      <td key={month} className="border border-gray-200 p-2 text-center">
+                      <td key={month} className="px-2 py-3 text-center">
                         <button
                           onClick={() => togglePayment(expense.id, monthIndex, isPaid)}
-                          className={`w-7 h-7 rounded-full text-white text-xs font-bold transition-colors flex items-center justify-center mx-auto ${
-                            isPaid ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 hover:bg-gray-400'
+                          className={`w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center mx-auto ${
+                            isPaid
+                              ? 'bg-caudal-green text-black hover:bg-opacity-80 scale-105'
+                              : 'bg-caudal-surface-alt border border-caudal-border text-caudal-text-dim hover:border-caudal-text-muted'
                           }`}
                           title={isPaid ? 'Mark as unpaid' : 'Mark as paid'}
                         >
                           {isPaid ? <CheckIcon className="w-3.5 h-3.5" /> : null}
                         </button>
                       </td>
-                    )
+                    );
                   })}
-                  <td className="border border-gray-200 p-2 text-center font-bold text-green-700">
+                  <td className="px-4 py-3 text-right font-bold text-caudal-green">
                     {formatMoney(getTotalPaid(expense))}
                   </td>
-                  <td className="border border-gray-200 p-2 text-center">
+                  <td className="px-4 py-3 text-center">
                     {editingId === expense.id ? (
-                      <div className="flex gap-1.5 justify-center items-center">
-                        <button 
-                          onClick={() => handleUpdate(expense.id)} 
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => handleUpdate(expense.id)}
+                          className="p-1 text-caudal-green hover:bg-caudal-surface-alt rounded transition-colors"
                           title="Save"
-                          aria-label="Save"
-                          className="p-1.5 text-green-700 hover:bg-green-100 rounded border border-green-300 transition-colors"
                         >
                           <CheckIcon className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => setEditingId(null)} 
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="p-1 text-caudal-text-muted hover:bg-caudal-surface-alt rounded transition-colors"
                           title="Cancel"
-                          aria-label="Cancel"
-                          className="p-1.5 text-gray-600 hover:bg-gray-100 rounded border border-gray-300 transition-colors"
                         >
                           <XMarkIcon className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
-                      <div className="flex gap-1.5 justify-center items-center">
-                        <button 
-                          onClick={() => handleEdit(expense)} 
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => handleEdit(expense)}
+                          className="p-1 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt rounded transition-colors"
                           title="Edit"
-                          aria-label="Edit"
-                          className="p-1.5 text-amber-700 hover:bg-amber-50 rounded border border-amber-300 transition-colors"
                         >
                           <PencilIcon className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => handleDelete(expense.id)} 
+                        <button
+                          onClick={() => handleDelete(expense.id)}
+                          className="p-1 text-caudal-text-muted hover:text-caudal-error hover:bg-caudal-surface-alt rounded transition-colors"
                           title="Delete"
-                          aria-label="Delete"
-                          className="p-1.5 text-rose-700 hover:bg-rose-50 rounded border border-rose-300 transition-colors"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -358,25 +390,21 @@ export default function FixedExpenses() {
               ))}
             </tbody>
             <tfoot>
-              <tr className="bg-gray-100 text-gray-900">
-                <td colSpan={3 + MONTHS.length} className="border border-gray-200 p-2 text-right font-bold text-gray-900">Annual Total Paid:</td>
-                <td className="border border-gray-200 p-2 text-center font-bold text-green-700">
-                  {formatMoney(fixedExpenses.reduce((acc, expense) => acc + getTotalPaid(expense), 0))}
+              <tr className="bg-caudal-surface-alt text-caudal-text font-semibold border-t border-caudal-border">
+                <td colSpan={3 + MONTHS.length} className="px-4 py-3 text-right text-xs uppercase tracking-wider text-caudal-text-muted">
+                  Annual Total Paid:
                 </td>
-                <td className="border border-gray-200 p-2"></td>
+                <td className="px-4 py-3 text-right font-bold text-caudal-green">
+                  {formatMoney(annualTotal)}
+                </td>
+                <td></td>
               </tr>
             </tfoot>
           </table>
         </div>
       )}
 
-      {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
-        />
-      )}
-    </main>
-  )
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </div>
+  );
 }

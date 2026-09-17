@@ -1,36 +1,37 @@
-'use client'
+'use client';
 
-import { useEffect } from "react"
-
-import { XMarkIcon } from "@/components/icons"
+import React, { useEffect } from 'react';
+import { XMarkIcon } from '@/components/icons';
 
 export default function Toast({ message, type = 'success', onClose }) {
   useEffect(() => {
     const timer = setTimeout(() => {
-      onClose?.()
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [onClose])
+      if (onClose) onClose();
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
-  const colors = {
-    success: 'bg-emerald-600',
-    error: 'bg-rose-600',
-    info: 'bg-blue-600',
-  }
+  const borderColors = {
+    success: 'border-caudal-green',
+    error: 'border-caudal-error',
+    info: 'border-blue-500'
+  };
+
+  const borderColor = borderColors[type] || borderColors.success;
 
   return (
-    <div
-      role="alert"
-      className={`fixed bottom-5 right-5 ${colors[type] || colors.info} text-white px-5 py-3 rounded-lg shadow-xl z-50 animate-fade-in flex items-center gap-3 text-sm font-medium`}
-    >
-      <span>{message}</span>
-      <button
-        onClick={onClose}
-        className="opacity-75 hover:opacity-100 p-0.5 rounded transition-opacity"
-        aria-label="Close"
-      >
-        <XMarkIcon className="w-4 h-4" />
-      </button>
+    <div className="fixed bottom-6 right-6 z-50 animate-fade-in shadow-xl shadow-black/30">
+      <div className={`flex items-center justify-between min-w-[300px] p-4 bg-caudal-surface rounded-r-lg border-l-4 ${borderColor}`}>
+        <p className="text-caudal-text font-medium pr-4">{message}</p>
+        <button 
+          onClick={onClose}
+          className="text-caudal-text-dim hover:text-caudal-text transition-colors"
+          aria-label="Close"
+        >
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
     </div>
-  )
+  );
 }

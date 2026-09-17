@@ -15,6 +15,7 @@ model Payroll {
   amountReceived Float
   isr            Float
   savingsFund    Float    @default(0)
+  employerMatch  Float    @default(0)
   notes          String?
   createdAt      DateTime @default(now())
 }

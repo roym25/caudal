@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Payroll" ADD COLUMN     "employerMatch" DOUBLE PRECISION NOT NULL DEFAULT 0;

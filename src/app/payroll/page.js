@@ -1,101 +1,132 @@
-'use client'
+'use client';
 
-import { useState, useEffect, Fragment, useRef } from "react"
-import { formatMoney, formatDate } from "@/lib/format"
-import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon, PlusIcon } from "@/components/icons"
-import Toast from "@/components/Toast"
-import EmptyState from "@/components/EmptyState"
-import LoadingTable from "@/components/LoadingTable"
+import { useState, useEffect } from 'react';
+import { formatMoney, formatDate } from '@/lib/format';
+import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon, PlusIcon } from '@/components/icons';
+import Toast from '@/components/Toast';
+import EmptyState from '@/components/EmptyState';
+import LoadingTable from '@/components/LoadingTable';
+import SlidePanel from '@/components/SlidePanel';
 
-export default function Payroll() {
-  const [payrolls, setPayrolls] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState(null)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({
-    date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: ''
-  })
-  const [editingId, setEditingId] = useState(null)
-  const [editForm, setEditForm] = useState({
-    date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: ''
-  })
+export default function PayrollPage() {
+  const [payrolls, setPayrolls] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
-  const weekRef = useRef(null)
-  const amountRef = useRef(null)
-  const isrRef = useRef(null)
-  const savingsRef = useRef(null)
-  const notesRef = useRef(null)
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    week: '',
+    amountReceived: '',
+    isr: '',
+    savingsFund: '',
+    employerMatch: '',
+    notes: ''
+  });
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type })
-  }
+  const [editFormData, setEditFormData] = useState({});
+
+  useEffect(() => {
+    fetchPayrolls();
+  }, []);
 
   const fetchPayrolls = async () => {
     try {
-      setLoading(true)
-      const response = await fetch('/api/payroll')
-      const data = await response.json()
-      if (Array.isArray(data)) {
-        setPayrolls(data)
-      }
-    } catch (err) {
-      console.error("Error fetching payrolls:", err)
-      showToast('Error loading payrolls', 'error')
+      const res = await fetch('/api/payroll');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setPayrolls(Array.isArray(data) ? data : []);
+    } catch (error) {
+      showToast('Failed to load payroll data', 'error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  useEffect(() => {
-    fetchPayrolls()
-  }, [])
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
-  const handleSubmit = async () => {
-    if (!form.date || !form.week || !form.amountReceived || !form.isr) {
-      showToast('Please fill in all required fields', 'error')
-      return
-    }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       const res = await fetch('/api/payroll', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...form,
-          week: parseInt(form.week, 10),
-          amountReceived: parseFloat(form.amountReceived),
-          isr: parseFloat(form.isr),
-          savingsFund: parseFloat(form.savingsFund || 0)
-        })
-      })
+          ...formData,
+          week: Number(formData.week),
+          amountReceived: Number(formData.amountReceived),
+          isr: Number(formData.isr || 0),
+          savingsFund: Number(formData.savingsFund || 0),
+          employerMatch: Number(formData.employerMatch || 0)
+        }),
+      });
 
       if (!res.ok) {
-        const err = await res.json()
-        showToast(err.errors?.join(', ') || 'Failed to save payroll', 'error')
-        return
+        const err = await res.json();
+        throw new Error(err.errors?.join(', ') || 'Failed to create payroll record');
       }
 
-      setForm({ date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: '' })
-      setShowForm(false)
-      showToast('Payroll record added successfully')
-      fetchPayrolls()
-    } catch (err) {
-      console.error("Error creating payroll:", err)
-      showToast('Network error while saving', 'error')
+      await fetchPayrolls();
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        week: '',
+        amountReceived: '',
+        isr: '',
+        savingsFund: '',
+        employerMatch: '',
+        notes: ''
+      });
+      setShowForm(false);
+      showToast('Payroll record created successfully');
+    } catch (error) {
+      showToast(error.message || 'Failed to create payroll', 'error');
     }
-  }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this record?')) return;
+
+    try {
+      const res = await fetch(`/api/payroll/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+
+      await fetchPayrolls();
+      showToast('Payroll record deleted');
+    } catch (error) {
+      showToast(error.message || 'Failed to delete record', 'error');
+    }
+  };
 
   const handleEdit = (payroll) => {
-    setEditingId(payroll.id)
-    setEditForm({
+    setEditingId(payroll.id);
+    setEditFormData({
       date: new Date(payroll.date).toISOString().split('T')[0],
       week: payroll.week,
       amountReceived: payroll.amountReceived,
       isr: payroll.isr,
       savingsFund: payroll.savingsFund,
+      employerMatch: payroll.employerMatch || 0,
       notes: payroll.notes || ''
-    })
-  }
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditFormData({});
+  };
 
   const handleUpdate = async (id) => {
     try {
@@ -103,301 +134,185 @@ export default function Payroll() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...editForm,
-          week: parseInt(editForm.week, 10),
-          amountReceived: parseFloat(editForm.amountReceived),
-          isr: parseFloat(editForm.isr),
-          savingsFund: parseFloat(editForm.savingsFund || 0)
-        })
-      })
+          ...editFormData,
+          week: Number(editFormData.week),
+          amountReceived: Number(editFormData.amountReceived),
+          isr: Number(editFormData.isr || 0),
+          savingsFund: Number(editFormData.savingsFund || 0),
+          employerMatch: Number(editFormData.employerMatch || 0)
+        }),
+      });
 
       if (!res.ok) {
-        const err = await res.json()
-        showToast(err.errors?.join(', ') || 'Failed to update payroll', 'error')
-        return
+        const err = await res.json();
+        throw new Error(err.errors?.join(', ') || 'Failed to update');
       }
 
-      setEditingId(null)
-      showToast('Payroll updated successfully')
-      fetchPayrolls()
-    } catch (err) {
-      console.error("Error updating payroll:", err)
-      showToast('Network error while updating', 'error')
+      await fetchPayrolls();
+      setEditingId(null);
+      showToast('Payroll updated successfully');
+    } catch (error) {
+      showToast(error.message || 'Failed to update record', 'error');
     }
-  }
+  };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this payroll?')) return
-    try {
-      const res = await fetch(`/api/payroll/${id}`, { method: 'DELETE' })
-      if (!res.ok) {
-        showToast('Failed to delete payroll', 'error')
-        return
-      }
-      showToast('Payroll deleted successfully')
-      fetchPayrolls()
-    } catch (err) {
-      console.error("Error deleting payroll:", err)
-      showToast('Network error while deleting', 'error')
+  const groupedPayrolls = payrolls.reduce((acc, payroll) => {
+    const date = new Date(payroll.date);
+    const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+    if (!acc[monthYear]) {
+      acc[monthYear] = [];
     }
-  }
-
-  const groupPayrollsByMonth = (payrollsList) => {
-    const grouped = {}
-
-    payrollsList.forEach(payroll => {
-      const date = new Date(payroll.date)
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-      const monthName = date.toLocaleString('en-US', { month: 'long', year: 'numeric' })
-
-      if (!grouped[monthKey]) {
-        grouped[monthKey] = { monthName, payrolls: [] }
-      }
-      grouped[monthKey].payrolls.push(payroll)
-    })
-
-    return grouped
-  }
-
-  const sortedGroupedPayrolls = (payrollsList) => {
-    const grouped = groupPayrollsByMonth(payrollsList)
-    const sorted = {}
-
-    Object.keys(grouped).sort().reverse().forEach(monthKey => {
-      sorted[monthKey] = grouped[monthKey]
-      sorted[monthKey].payrolls.sort((a, b) => a.week - b.week)
-    })
-
-    return sorted
-  }
+    acc[monthYear].push(payroll);
+    return acc;
+  }, {});
 
   return (
-    <main className="p-6 max-w-6xl mx-auto w-full text-gray-900">
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Payroll</h1>
+    <div className="p-6 max-w-6xl mx-auto w-full space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-caudal-text">Payroll</h1>
+          <p className="text-sm text-caudal-text-muted mt-0.5">Weekly income and deductions</p>
+        </div>
         <button
-          onClick={() => setShowForm(prev => !prev)}
-          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 shadow-sm ${
-            showForm
-              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
-          }`}
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-caudal-green text-black font-semibold rounded-lg hover:bg-opacity-90 transition-colors"
         >
-          {showForm ? (
-            <>
-              <XMarkIcon className="w-4 h-4" />
-              <span>Close Form</span>
-            </>
-          ) : (
-            <>
-              <PlusIcon className="w-4 h-4" />
-              <span>New Payroll</span>
-            </>
-          )}
+          <PlusIcon className="w-4 h-4" />
+          New Payroll
         </button>
       </div>
 
-      {showForm && (
-        <div className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50/70 animate-fade-in">
-          <h2 className="text-base font-semibold mb-3 text-gray-800">Add New Payroll</h2>
-          <div className="flex flex-col gap-3 max-w-md">
-            <input 
-              type="date" 
-              value={form.date} 
-              onChange={(e) => setForm({...form, date: e.target.value})}
-              onKeyDown={(e) => e.key === 'Enter' && weekRef.current?.focus()}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-            />
-            <input 
-              type="number" 
-              ref={weekRef}
-              placeholder="Week (1-5)" 
-              value={form.week} 
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val.length <= 1) {
-                  setForm({...form, week: val});
-                }
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && amountRef.current?.focus()}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-            />
-            <input 
-              type="number" 
-              ref={amountRef}
-              placeholder="Amount Received" 
-              value={form.amountReceived} 
-              onChange={(e) => setForm({...form, amountReceived: e.target.value})}
-              onKeyDown={(e) => e.key === 'Enter' && isrRef.current?.focus()}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-            />
-            <input 
-              type="number" 
-              ref={isrRef}
-              placeholder="ISR" 
-              value={form.isr} 
-              onChange={(e) => setForm({...form, isr: e.target.value})}
-              onKeyDown={(e) => e.key === 'Enter' && savingsRef.current?.focus()}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-            />
-            <input 
-              type="number" 
-              ref={savingsRef}
-              placeholder="Savings Fund" 
-              value={form.savingsFund} 
-              onChange={(e) => setForm({...form, savingsFund: e.target.value})}
-              onKeyDown={(e) => e.key === 'Enter' && notesRef.current?.focus()}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-            />
-            <input 
-              type="text" 
-              ref={notesRef}
-              placeholder="Notes" 
-              value={form.notes} 
-              onChange={(e) => setForm({...form, notes: e.target.value})}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-            />
-            <div className="flex gap-2 pt-1">
-              <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
-                Save
-              </button>
-              <button onClick={() => setShowForm(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded font-medium transition-colors">
-                Cancel
-              </button>
-            </div>
+      <SlidePanel isOpen={showForm} onClose={() => setShowForm(false)} title="New Payroll">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Date</label>
+            <input required type="date" name="date" value={formData.date} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
           </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Week (1–5)</label>
+            <input required type="number" min="1" max="5" name="week" placeholder="1" value={formData.week} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Amount Received (Net Pay)</label>
+            <input required type="number" step="0.01" name="amountReceived" placeholder="0.00" value={formData.amountReceived} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">ISR</label>
+            <input required type="number" step="0.01" name="isr" placeholder="0.00" value={formData.isr} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Savings Fund (Your Deduction)</label>
+            <input type="number" step="0.01" name="savingsFund" placeholder="0.00" value={formData.savingsFund} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Employer Match</label>
+            <input type="number" step="0.01" name="employerMatch" placeholder="0.00" value={formData.employerMatch} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Notes</label>
+            <input type="text" name="notes" placeholder="Optional notes" value={formData.notes} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+          </div>
+          <div className="pt-4">
+            <button type="submit" className="w-full bg-caudal-green text-black font-semibold rounded-lg px-4 py-2.5 hover:bg-opacity-90 transition-colors">
+              Save Payroll
+            </button>
+          </div>
+        </form>
+      </SlidePanel>
+
+      {loading ? (
+        <LoadingTable columns={8} rows={4} />
+      ) : payrolls.length === 0 ? (
+        <EmptyState message="No payroll records registered yet" action="Click '+ New Payroll' to add your first payment." />
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(groupedPayrolls).map(([month, records]) => (
+            <div key={month} className="space-y-3">
+              <h2 className="text-base font-semibold text-caudal-text border-l-4 border-caudal-green pl-3">{month}</h2>
+              <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full text-sm text-left whitespace-nowrap min-w-[750px]">
+                  <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Date</th>
+                      <th className="px-4 py-3 text-right font-medium">Week</th>
+                      <th className="px-4 py-3 text-right font-medium">Amount</th>
+                      <th className="px-4 py-3 text-right font-medium">ISR</th>
+                      <th className="px-4 py-3 text-right font-medium">Savings</th>
+                      <th className="px-4 py-3 text-right font-medium">Match</th>
+                      <th className="px-4 py-3 font-medium">Notes</th>
+                      <th className="px-4 py-3 text-center font-medium w-24">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-caudal-border text-caudal-text">
+                    {records.map(record => (
+                      <tr key={record.id} className="hover:bg-caudal-surface-alt/50 transition-colors">
+                        {editingId === record.id ? (
+                          <>
+                            <td className="px-4 py-3">
+                              <input type="date" name="date" value={editFormData.date} onChange={handleEditInputChange} className="w-full min-w-[130px] bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <input type="number" min="1" max="5" name="week" value={editFormData.week} onChange={handleEditInputChange} className="w-full min-w-[50px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <input type="number" step="0.01" name="amountReceived" value={editFormData.amountReceived} onChange={handleEditInputChange} className="w-full min-w-[90px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <input type="number" step="0.01" name="isr" value={editFormData.isr} onChange={handleEditInputChange} className="w-full min-w-[80px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <input type="number" step="0.01" name="savingsFund" value={editFormData.savingsFund} onChange={handleEditInputChange} className="w-full min-w-[80px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <input type="number" step="0.01" name="employerMatch" value={editFormData.employerMatch} onChange={handleEditInputChange} className="w-full min-w-[80px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input type="text" name="notes" value={editFormData.notes} onChange={handleEditInputChange} className="w-full min-w-[120px] bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button onClick={() => handleUpdate(record.id)} className="p-1 text-caudal-green hover:bg-caudal-surface-alt rounded transition-colors" title="Save">
+                                  <CheckIcon className="w-4 h-4" />
+                                </button>
+                                <button onClick={handleCancelEdit} className="p-1 text-caudal-text-muted hover:bg-caudal-surface-alt rounded transition-colors" title="Cancel">
+                                  <XMarkIcon className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-4 py-3">{formatDate(record.date)}</td>
+                            <td className="px-4 py-3 text-right text-caudal-text-muted">{record.week}</td>
+                            <td className="px-4 py-3 text-right font-medium text-caudal-green">{formatMoney(record.amountReceived)}</td>
+                            <td className="px-4 py-3 text-right font-medium text-caudal-orange">{formatMoney(record.isr)}</td>
+                            <td className="px-4 py-3 text-right text-caudal-green">{formatMoney(record.savingsFund)}</td>
+                            <td className="px-4 py-3 text-right text-caudal-green">{formatMoney(record.employerMatch || 0)}</td>
+                            <td className="px-4 py-3 text-caudal-text-muted truncate max-w-[180px]" title={record.notes || ''}>{record.notes || '-'}</td>
+                            <td className="px-4 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button onClick={() => handleEdit(record)} className="p-1 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt rounded transition-colors" title="Edit">
+                                  <PencilIcon className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => handleDelete(record.id)} className="p-1 text-caudal-text-muted hover:text-caudal-error hover:bg-caudal-surface-alt rounded transition-colors" title="Delete">
+                                  <TrashIcon className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      <div>
-        <h2 className="text-lg font-semibold mb-4 text-gray-900">Payroll History</h2>
-
-        {loading ? (
-          <LoadingTable columns={7} rows={4} />
-        ) : payrolls.length === 0 ? (
-          <EmptyState 
-            message="No payroll records registered yet" 
-            action="Click '+ New Payroll' to add your first payment." 
-          />
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full border-collapse min-w-[700px]">
-              <thead>
-                <tr className="bg-gray-100 text-gray-900">
-                  <th className="border border-gray-200 p-2 text-left">Date</th>
-                  <th className="border border-gray-200 p-2 text-left">Week</th>
-                  <th className="border border-gray-200 p-2 text-left">Amount</th>
-                  <th className="border border-gray-200 p-2 text-left">ISR</th>
-                  <th className="border border-gray-200 p-2 text-left">Savings Fund</th>
-                  <th className="border border-gray-200 p-2 text-left">Notes</th>
-                  <th className="border border-gray-200 p-2 text-center w-24">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(sortedGroupedPayrolls(payrolls)).map(([monthKey, group]) => (
-                  <Fragment key={monthKey}>
-                    <tr className="bg-blue-50">
-                      <td colSpan="7" className="border border-gray-200 p-2 font-bold text-blue-800">
-                        {group.monthName}
-                      </td>
-                    </tr>
-                    {group.payrolls.map((payroll) => (
-                      <tr key={payroll.id} className="hover:bg-gray-50 text-gray-900">
-                        <td className="border border-gray-200 p-2">
-                          {editingId === payroll.id
-                            ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} className="border border-gray-300 p-1 rounded bg-white text-gray-900" />
-                            : formatDate(payroll.date)
-                          }
-                        </td>
-                        <td className="border border-gray-200 p-2">
-                          {editingId === payroll.id
-                            ? <input type="number" value={editForm.week} onChange={(e) => setEditForm({...editForm, week: e.target.value})} className="border border-gray-300 p-1 rounded w-16 bg-white text-gray-900" />
-                            : payroll.week
-                          }
-                        </td>
-                        <td className="border border-gray-200 p-2 font-medium text-gray-900">
-                          {editingId === payroll.id
-                            ? <input type="number" value={editForm.amountReceived} onChange={(e) => setEditForm({...editForm, amountReceived: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
-                            : formatMoney(payroll.amountReceived)
-                          }
-                        </td>
-                        <td className="border border-gray-200 p-2 text-red-600 font-medium">
-                          {editingId === payroll.id
-                            ? <input type="number" value={editForm.isr} onChange={(e) => setEditForm({...editForm, isr: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
-                            : formatMoney(payroll.isr)
-                          }
-                        </td>
-                        <td className="border border-gray-200 p-2 text-green-700 font-medium">
-                          {editingId === payroll.id
-                            ? <input type="number" value={editForm.savingsFund} onChange={(e) => setEditForm({...editForm, savingsFund: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
-                            : formatMoney(payroll.savingsFund)
-                          }
-                        </td>
-                        <td className="border border-gray-200 p-2 text-gray-600">
-                          {editingId === payroll.id
-                            ? <input type="text" value={editForm.notes} onChange={(e) => setEditForm({...editForm, notes: e.target.value})} className="border border-gray-300 p-1 rounded w-full bg-white text-gray-900" />
-                            : (payroll.notes || '-')
-                          }
-                        </td>
-                        <td className="border border-gray-200 p-2 text-center">
-                          {editingId === payroll.id ? (
-                            <div className="flex gap-1.5 justify-center items-center">
-                              <button 
-                                onClick={() => handleUpdate(payroll.id)} 
-                                title="Save"
-                                aria-label="Save"
-                                className="p-1.5 text-green-700 hover:bg-green-100 rounded border border-green-300 transition-colors"
-                              >
-                                <CheckIcon className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => setEditingId(null)} 
-                                title="Cancel"
-                                aria-label="Cancel"
-                                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded border border-gray-300 transition-colors"
-                              >
-                                <XMarkIcon className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex gap-1.5 justify-center items-center">
-                              <button 
-                                onClick={() => handleEdit(payroll)} 
-                                title="Edit"
-                                aria-label="Edit"
-                                className="p-1.5 text-amber-700 hover:bg-amber-50 rounded border border-amber-300 transition-colors"
-                              >
-                                <PencilIcon className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleDelete(payroll.id)} 
-                                title="Delete"
-                                aria-label="Delete"
-                                className="p-1.5 text-rose-700 hover:bg-rose-50 rounded border border-rose-300 transition-colors"
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
-        />
-      )}
-    </main>
-  )
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </div>
+  );
 }

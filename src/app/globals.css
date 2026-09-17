@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════
+   CAUDAL v2.0 — Design System Tokens
+   Palette: Green / Black / Orange
+   ═══════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --caudal-bg:          #0F0F0F;
+  --caudal-surface:     #1A1A1A;
+  --caudal-surface-alt: #252525;
+  --caudal-border:      #2E2E2E;
+
+  /* Accents */
+  --caudal-green:       #00C853;
+  --caudal-green-dim:   #00A344;
+  --caudal-orange:      #E65100;
+  --caudal-orange-dim:  #BF4400;
+
+  /* Text */
+  --caudal-text:        #E4E4E4;
+  --caudal-text-muted:  #9CA3AF;
+  --caudal-text-dim:    #6B7280;
+
+  /* Semantic */
+  --caudal-success:     #10B981;
+  --caudal-error:       #EF4444;
+  --caudal-warning:     #F59E0B;
+
+  /* Legacy compatibility */
+  --background: var(--caudal-bg);
+  --foreground: var(--caudal-text);
 }
 
 @theme inline {
@@ -10,19 +38,71 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Expose Caudal tokens to Tailwind */
+  --color-caudal-bg: var(--caudal-bg);
+  --color-caudal-surface: var(--caudal-surface);
+  --color-caudal-surface-alt: var(--caudal-surface-alt);
+  --color-caudal-border: var(--caudal-border);
+  --color-caudal-green: var(--caudal-green);
+  --color-caudal-green-dim: var(--caudal-green-dim);
+  --color-caudal-orange: var(--caudal-orange);
+  --color-caudal-orange-dim: var(--caudal-orange-dim);
+  --color-caudal-text: var(--caudal-text);
+  --color-caudal-text-muted: var(--caudal-text-muted);
+  --color-caudal-text-dim: var(--caudal-text-dim);
+  --color-caudal-success: var(--caudal-success);
+  --color-caudal-error: var(--caudal-error);
+  --color-caudal-warning: var(--caudal-warning);
 }
 
+/* ═══════════════════════════════════════════
+   Base Styles
+   ═══════════════════════════════════════════ */
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--caudal-bg);
+  color: var(--caudal-text);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   min-height: 100vh;
 }
 
+/* Form Controls */
 input, select, textarea {
-  color: #171717;
-  background-color: #ffffff;
+  color: var(--caudal-text);
+  background-color: var(--caudal-surface);
+  border-color: var(--caudal-border);
 }
+
+input::placeholder, textarea::placeholder {
+  color: var(--caudal-text-dim);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--caudal-green);
+  box-shadow: 0 0 0 2px rgba(0, 200, 83, 0.15);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--caudal-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--caudal-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--caudal-text-dim);
+}
+
+/* ═══════════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════════ */
 
 @keyframes fadeIn {
   from {
@@ -35,6 +115,56 @@ input, select, textarea {
   }
 }
 
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-out-right {
+  animation: slideOutRight 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--caudal-surface) 25%,
+    var(--caudal-surface-alt) 50%,
+    var(--caudal-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
