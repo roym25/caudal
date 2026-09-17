@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Fragment, useRef } from "react"
 import { formatMoney, formatDate } from "@/lib/format"
+import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon, PlusIcon } from "@/components/icons"
 import Toast from "@/components/Toast"
 import EmptyState from "@/components/EmptyState"
 import LoadingTable from "@/components/LoadingTable"
@@ -182,13 +183,23 @@ export default function Payroll() {
               : "bg-blue-600 hover:bg-blue-700 text-white"
           }`}
         >
-          {showForm ? "? Cerrar formulario" : "+ Nueva N?mina"}
+          {showForm ? (
+            <>
+              <XMarkIcon className="w-4 h-4" />
+              <span>Close Form</span>
+            </>
+          ) : (
+            <>
+              <PlusIcon className="w-4 h-4" />
+              <span>New Payroll</span>
+            </>
+          )}
         </button>
       </div>
 
       {showForm && (
         <div className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50/70 animate-fade-in">
-          <h2 className="text-base font-semibold mb-3 text-gray-800">Registrar Nueva N?mina</h2>
+          <h2 className="text-base font-semibold mb-3 text-gray-800">Add New Payroll</h2>
           <div className="flex flex-col gap-3 max-w-md">
             <input 
               type="date" 
@@ -249,10 +260,10 @@ export default function Payroll() {
             />
             <div className="flex gap-2 pt-1">
               <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
-                Guardar
+                Save
               </button>
               <button onClick={() => setShowForm(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded font-medium transition-colors">
-                Cancelar
+                Cancel
               </button>
             </div>
           </div>
@@ -266,8 +277,8 @@ export default function Payroll() {
           <LoadingTable columns={7} rows={4} />
         ) : payrolls.length === 0 ? (
           <EmptyState 
-            message="No hay n?minas registradas a?n" 
-            action="Haz clic en '+ Nueva N?mina' para agregar tu primer pago." 
+            message="No payroll records registered yet" 
+            action="Click '+ New Payroll' to add your first payment." 
           />
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -280,7 +291,7 @@ export default function Payroll() {
                   <th className="border border-gray-200 p-2 text-left">ISR</th>
                   <th className="border border-gray-200 p-2 text-left">Savings Fund</th>
                   <th className="border border-gray-200 p-2 text-left">Notes</th>
-                  <th className="border border-gray-200 p-2 text-left">Actions</th>
+                  <th className="border border-gray-200 p-2 text-center w-24">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -326,19 +337,47 @@ export default function Payroll() {
                         <td className="border border-gray-200 p-2 text-gray-600">
                           {editingId === payroll.id
                             ? <input type="text" value={editForm.notes} onChange={(e) => setEditForm({...editForm, notes: e.target.value})} className="border border-gray-300 p-1 rounded w-full bg-white text-gray-900" />
-                            : (payroll.notes || '?')
+                            : (payroll.notes || '-')
                           }
                         </td>
-                        <td className="border border-gray-200 p-2">
+                        <td className="border border-gray-200 p-2 text-center">
                           {editingId === payroll.id ? (
-                            <div className="flex gap-1">
-                              <button onClick={() => handleUpdate(payroll.id)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium">Save</button>
-                              <button onClick={() => setEditingId(null)} className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs font-medium">Cancel</button>
+                            <div className="flex gap-1.5 justify-center items-center">
+                              <button 
+                                onClick={() => handleUpdate(payroll.id)} 
+                                title="Save"
+                                aria-label="Save"
+                                className="p-1.5 text-green-700 hover:bg-green-100 rounded border border-green-300 transition-colors"
+                              >
+                                <CheckIcon className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => setEditingId(null)} 
+                                title="Cancel"
+                                aria-label="Cancel"
+                                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded border border-gray-300 transition-colors"
+                              >
+                                <XMarkIcon className="w-4 h-4" />
+                              </button>
                             </div>
                           ) : (
-                            <div className="flex gap-1">
-                              <button onClick={() => handleEdit(payroll)} className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs font-medium">Edit</button>
-                              <button onClick={() => handleDelete(payroll.id)} className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium">Delete</button>
+                            <div className="flex gap-1.5 justify-center items-center">
+                              <button 
+                                onClick={() => handleEdit(payroll)} 
+                                title="Edit"
+                                aria-label="Edit"
+                                className="p-1.5 text-amber-700 hover:bg-amber-50 rounded border border-amber-300 transition-colors"
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDelete(payroll.id)} 
+                                title="Delete"
+                                aria-label="Delete"
+                                className="p-1.5 text-rose-700 hover:bg-rose-50 rounded border border-rose-300 transition-colors"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
                             </div>
                           )}
                         </td>

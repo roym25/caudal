@@ -81,8 +81,8 @@ export default function Home() {
 
   const isAll = selectedMonth === "all"
   const periodLabel = isAll
-    ? "General (Hist?rico total)"
-    : new Date(`${selectedMonth}-15T12:00:00Z`).toLocaleString("es-MX", {
+    ? "All-Time Overview"
+    : new Date(`${selectedMonth}-15T12:00:00Z`).toLocaleString("en-US", {
         month: "long",
         year: "numeric",
       })
@@ -104,10 +104,10 @@ export default function Home() {
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
             }`}
           >
-            Ver Todo (General)
+            View All
           </button>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm text-gray-500">Filtrar mes:</span>
+            <span className="text-sm text-gray-500">Filter Month:</span>
             <input
               type="month"
               value={isAll ? "" : selectedMonth}
@@ -132,7 +132,7 @@ export default function Home() {
           </p>
           {!isAll && (
             <p className="text-xs text-gray-500 mt-2">
-              Fijos: {formatMoney(summary.totalFixed)} ? Variables: {formatMoney(summary.totalVariable)}
+              Fixed: {formatMoney(summary.totalFixed)} | Variable: {formatMoney(summary.totalVariable)}
             </p>
           )}
         </div>

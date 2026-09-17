@@ -2,6 +2,8 @@
 
 import { useEffect } from "react"
 
+import { XMarkIcon } from "@/components/icons"
+
 export default function Toast({ message, type = 'success', onClose }) {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -24,10 +26,10 @@ export default function Toast({ message, type = 'success', onClose }) {
       <span>{message}</span>
       <button
         onClick={onClose}
-        className="opacity-75 hover:opacity-100 text-lg leading-none"
+        className="opacity-75 hover:opacity-100 p-0.5 rounded transition-opacity"
         aria-label="Close"
       >
-        ?
+        <XMarkIcon className="w-4 h-4" />
       </button>
     </div>
   )

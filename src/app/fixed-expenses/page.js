@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { formatMoney } from "@/lib/format"
+import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "@/components/icons"
 import Toast from "@/components/Toast"
 import EmptyState from "@/components/EmptyState"
 import LoadingTable from "@/components/LoadingTable"
@@ -171,20 +172,22 @@ export default function FixedExpenses() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setCurrentYear(y => y - 1)}
-              className="px-2.5 py-1 bg-white hover:bg-gray-100 rounded border border-gray-300 text-sm font-semibold text-gray-800 transition-colors"
-              title="A?o anterior"
+              className="p-1.5 bg-white hover:bg-gray-100 rounded border border-gray-300 text-gray-700 transition-colors"
+              title="Previous year"
+              aria-label="Previous year"
             >
-              ?
+              <ChevronLeftIcon className="w-4 h-4" />
             </button>
             <span className="text-base font-bold min-w-[3.5rem] text-center text-gray-900">
               {currentYear}
             </span>
             <button
               onClick={() => setCurrentYear(y => y + 1)}
-              className="px-2.5 py-1 bg-white hover:bg-gray-100 rounded border border-gray-300 text-sm font-semibold text-gray-800 transition-colors"
-              title="Siguiente a?o"
+              className="p-1.5 bg-white hover:bg-gray-100 rounded border border-gray-300 text-gray-700 transition-colors"
+              title="Next year"
+              aria-label="Next year"
             >
-              ?
+              <ChevronRightIcon className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -197,13 +200,23 @@ export default function FixedExpenses() {
               : "bg-blue-600 hover:bg-blue-700 text-white"
           }`}
         >
-          {showForm ? "? Cerrar formulario" : "+ Nuevo Gasto Fijo"}
+          {showForm ? (
+            <>
+              <XMarkIcon className="w-4 h-4" />
+              <span>Close Form</span>
+            </>
+          ) : (
+            <>
+              <PlusIcon className="w-4 h-4" />
+              <span>New Fixed Expense</span>
+            </>
+          )}
         </button>
       </div>
 
       {showForm && (
         <div className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50/70 animate-fade-in">
-          <h2 className="text-base font-semibold mb-3 text-gray-800">Registrar Nuevo Gasto Fijo</h2>
+          <h2 className="text-base font-semibold mb-3 text-gray-800">Add New Fixed Expense</h2>
           <div className="flex flex-wrap gap-3 items-center">
             <input
               type="text"
@@ -228,10 +241,10 @@ export default function FixedExpenses() {
               className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-36"
             />
             <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
-              Guardar
+              Save
             </button>
             <button onClick={() => setShowForm(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded font-medium transition-colors">
-              Cancelar
+              Cancel
             </button>
           </div>
         </div>
@@ -241,8 +254,8 @@ export default function FixedExpenses() {
         <LoadingTable columns={15} rows={3} />
       ) : fixedExpenses.length === 0 ? (
         <EmptyState 
-          message="No hay gastos fijos definidos" 
-          action="Haz clic en '+ Nuevo Gasto Fijo' para registrar servicios, rentas o suscripciones." 
+          message="No fixed expenses defined yet" 
+          action="Click '+ New Fixed Expense' to add recurring bills or subscriptions." 
         />
       ) : (
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -256,7 +269,7 @@ export default function FixedExpenses() {
                   <th key={month} className="border border-gray-200 p-2 text-center">{month}</th>
                 ))}
                 <th className="border border-gray-200 p-2 text-center bg-gray-200 font-semibold text-gray-900">Total Paid</th>
-                <th className="border border-gray-200 p-2 text-center">Actions</th>
+                <th className="border border-gray-200 p-2 text-center w-24">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -287,12 +300,12 @@ export default function FixedExpenses() {
                       <td key={month} className="border border-gray-200 p-2 text-center">
                         <button
                           onClick={() => togglePayment(expense.id, monthIndex, isPaid)}
-                          className={`w-7 h-7 rounded-full text-white text-xs font-bold transition-colors ${
+                          className={`w-7 h-7 rounded-full text-white text-xs font-bold transition-colors flex items-center justify-center mx-auto ${
                             isPaid ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 hover:bg-gray-400'
                           }`}
                           title={isPaid ? 'Mark as unpaid' : 'Mark as paid'}
                         >
-                          {isPaid ? '?' : ''}
+                          {isPaid ? <CheckIcon className="w-3.5 h-3.5" /> : null}
                         </button>
                       </td>
                     )
@@ -302,14 +315,42 @@ export default function FixedExpenses() {
                   </td>
                   <td className="border border-gray-200 p-2 text-center">
                     {editingId === expense.id ? (
-                      <div className="flex gap-1 justify-center">
-                        <button onClick={() => handleUpdate(expense.id)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium">Save</button>
-                        <button onClick={() => setEditingId(null)} className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs font-medium">Cancel</button>
+                      <div className="flex gap-1.5 justify-center items-center">
+                        <button 
+                          onClick={() => handleUpdate(expense.id)} 
+                          title="Save"
+                          aria-label="Save"
+                          className="p-1.5 text-green-700 hover:bg-green-100 rounded border border-green-300 transition-colors"
+                        >
+                          <CheckIcon className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setEditingId(null)} 
+                          title="Cancel"
+                          aria-label="Cancel"
+                          className="p-1.5 text-gray-600 hover:bg-gray-100 rounded border border-gray-300 transition-colors"
+                        >
+                          <XMarkIcon className="w-4 h-4" />
+                        </button>
                       </div>
                     ) : (
-                      <div className="flex gap-1 justify-center">
-                        <button onClick={() => handleEdit(expense)} className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs font-medium">Edit</button>
-                        <button onClick={() => handleDelete(expense.id)} className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium">Delete</button>
+                      <div className="flex gap-1.5 justify-center items-center">
+                        <button 
+                          onClick={() => handleEdit(expense)} 
+                          title="Edit"
+                          aria-label="Edit"
+                          className="p-1.5 text-amber-700 hover:bg-amber-50 rounded border border-amber-300 transition-colors"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(expense.id)} 
+                          title="Delete"
+                          aria-label="Delete"
+                          className="p-1.5 text-rose-700 hover:bg-rose-50 rounded border border-rose-300 transition-colors"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
                       </div>
                     )}
                   </td>
