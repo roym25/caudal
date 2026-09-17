@@ -169,18 +169,18 @@ export default function Payroll() {
   }
 
   return (
-    <main className="p-6 max-w-6xl mx-auto w-full">
-      <h1 className="text-2xl font-bold mb-6">Payroll</h1>
+    <main className="p-6 max-w-6xl mx-auto w-full text-gray-900">
+      <h1 className="text-2xl font-bold mb-6 text-gray-900">Payroll</h1>
 
-      <div className="mb-8 bg-gray-50 p-6 rounded-lg border">
-        <h2 className="text-lg font-semibold mb-4">New Payroll</h2>
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-3 text-gray-900">New Payroll</h2>
         <div className="flex flex-col gap-3 max-w-md">
           <input 
             type="date" 
             value={form.date} 
             onChange={(e) => setForm({...form, date: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && weekRef.current?.focus()}
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
           <input 
             type="number" 
@@ -194,7 +194,7 @@ export default function Payroll() {
               }
             }}
             onKeyDown={(e) => e.key === 'Enter' && amountRef.current?.focus()}
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
           <input 
             type="number" 
@@ -203,7 +203,7 @@ export default function Payroll() {
             value={form.amountReceived} 
             onChange={(e) => setForm({...form, amountReceived: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && isrRef.current?.focus()}
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
           <input 
             type="number" 
@@ -212,7 +212,7 @@ export default function Payroll() {
             value={form.isr} 
             onChange={(e) => setForm({...form, isr: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && savingsRef.current?.focus()}
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
           <input 
             type="number" 
@@ -221,7 +221,7 @@ export default function Payroll() {
             value={form.savingsFund} 
             onChange={(e) => setForm({...form, savingsFund: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && notesRef.current?.focus()}
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
           <input 
             type="text" 
@@ -230,16 +230,16 @@ export default function Payroll() {
             value={form.notes} 
             onChange={(e) => setForm({...form, notes: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
-          <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-medium">
+          <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-medium transition-colors">
             Save
           </button>
         </div>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-4">Payroll History</h2>
+        <h2 className="text-lg font-semibold mb-4 text-gray-900">Payroll History</h2>
 
         {loading ? (
           <LoadingTable columns={7} rows={4} />
@@ -249,66 +249,66 @@ export default function Payroll() {
             action="Fill in the form above to add your first payroll payment." 
           />
         ) : (
-          <div className="overflow-x-auto border rounded-lg">
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="w-full border-collapse min-w-[700px]">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-2 text-left">Date</th>
-                  <th className="border p-2 text-left">Week</th>
-                  <th className="border p-2 text-left">Amount</th>
-                  <th className="border p-2 text-left">ISR</th>
-                  <th className="border p-2 text-left">Savings Fund</th>
-                  <th className="border p-2 text-left">Notes</th>
-                  <th className="border p-2 text-left">Actions</th>
+                <tr className="bg-gray-100 text-gray-900">
+                  <th className="border border-gray-200 p-2 text-left">Date</th>
+                  <th className="border border-gray-200 p-2 text-left">Week</th>
+                  <th className="border border-gray-200 p-2 text-left">Amount</th>
+                  <th className="border border-gray-200 p-2 text-left">ISR</th>
+                  <th className="border border-gray-200 p-2 text-left">Savings Fund</th>
+                  <th className="border border-gray-200 p-2 text-left">Notes</th>
+                  <th className="border border-gray-200 p-2 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(sortedGroupedPayrolls(payrolls)).map(([monthKey, group]) => (
                   <Fragment key={monthKey}>
                     <tr className="bg-blue-50">
-                      <td colSpan="7" className="border p-2 font-bold text-blue-800">
+                      <td colSpan="7" className="border border-gray-200 p-2 font-bold text-blue-800">
                         {group.monthName}
                       </td>
                     </tr>
                     {group.payrolls.map((payroll) => (
-                      <tr key={payroll.id} className="hover:bg-gray-50">
-                        <td className="border p-2">
+                      <tr key={payroll.id} className="hover:bg-gray-50 text-gray-900">
+                        <td className="border border-gray-200 p-2">
                           {editingId === payroll.id
-                            ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} className="border p-1 rounded" />
+                            ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} className="border border-gray-300 p-1 rounded bg-white text-gray-900" />
                             : formatDate(payroll.date)
                           }
                         </td>
-                        <td className="border p-2">
+                        <td className="border border-gray-200 p-2">
                           {editingId === payroll.id
-                            ? <input type="number" value={editForm.week} onChange={(e) => setEditForm({...editForm, week: e.target.value})} className="border p-1 rounded w-16" />
+                            ? <input type="number" value={editForm.week} onChange={(e) => setEditForm({...editForm, week: e.target.value})} className="border border-gray-300 p-1 rounded w-16 bg-white text-gray-900" />
                             : payroll.week
                           }
                         </td>
-                        <td className="border p-2 font-medium">
+                        <td className="border border-gray-200 p-2 font-medium text-gray-900">
                           {editingId === payroll.id
-                            ? <input type="number" value={editForm.amountReceived} onChange={(e) => setEditForm({...editForm, amountReceived: e.target.value})} className="border p-1 rounded w-24" />
+                            ? <input type="number" value={editForm.amountReceived} onChange={(e) => setEditForm({...editForm, amountReceived: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
                             : formatMoney(payroll.amountReceived)
                           }
                         </td>
-                        <td className="border p-2 text-red-600">
+                        <td className="border border-gray-200 p-2 text-red-600 font-medium">
                           {editingId === payroll.id
-                            ? <input type="number" value={editForm.isr} onChange={(e) => setEditForm({...editForm, isr: e.target.value})} className="border p-1 rounded w-24" />
+                            ? <input type="number" value={editForm.isr} onChange={(e) => setEditForm({...editForm, isr: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
                             : formatMoney(payroll.isr)
                           }
                         </td>
-                        <td className="border p-2 text-green-700">
+                        <td className="border border-gray-200 p-2 text-green-700 font-medium">
                           {editingId === payroll.id
-                            ? <input type="number" value={editForm.savingsFund} onChange={(e) => setEditForm({...editForm, savingsFund: e.target.value})} className="border p-1 rounded w-24" />
+                            ? <input type="number" value={editForm.savingsFund} onChange={(e) => setEditForm({...editForm, savingsFund: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
                             : formatMoney(payroll.savingsFund)
                           }
                         </td>
-                        <td className="border p-2 text-gray-600">
+                        <td className="border border-gray-200 p-2 text-gray-600">
                           {editingId === payroll.id
-                            ? <input type="text" value={editForm.notes} onChange={(e) => setEditForm({...editForm, notes: e.target.value})} className="border p-1 rounded w-full" />
+                            ? <input type="text" value={editForm.notes} onChange={(e) => setEditForm({...editForm, notes: e.target.value})} className="border border-gray-300 p-1 rounded w-full bg-white text-gray-900" />
                             : (payroll.notes || '?')
                           }
                         </td>
-                        <td className="border p-2">
+                        <td className="border border-gray-200 p-2">
                           {editingId === payroll.id ? (
                             <div className="flex gap-1">
                               <button onClick={() => handleUpdate(payroll.id)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium">Save</button>

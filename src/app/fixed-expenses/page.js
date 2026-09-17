@@ -162,23 +162,23 @@ export default function FixedExpenses() {
   }
 
   return (
-    <main className="p-6 max-w-6xl mx-auto w-full">
+    <main className="p-6 max-w-6xl mx-auto w-full text-gray-900">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold">Fixed Expenses</h1>
-        <div className="flex items-center gap-2 bg-gray-100 p-1.5 rounded-lg border">
+        <h1 className="text-2xl font-bold text-gray-900">Fixed Expenses</h1>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentYear(y => y - 1)}
-            className="px-3 py-1 bg-white hover:bg-gray-200 rounded border text-sm font-semibold transition-colors"
+            className="px-3 py-1 bg-white hover:bg-gray-100 rounded border border-gray-300 text-sm font-semibold text-gray-800 transition-colors"
             title="Previous year"
           >
             ?
           </button>
-          <span className="text-base font-bold min-w-[4rem] text-center">
+          <span className="text-base font-bold min-w-[4rem] text-center text-gray-900">
             {currentYear}
           </span>
           <button
             onClick={() => setCurrentYear(y => y + 1)}
-            className="px-3 py-1 bg-white hover:bg-gray-200 rounded border text-sm font-semibold transition-colors"
+            className="px-3 py-1 bg-white hover:bg-gray-100 rounded border border-gray-300 text-sm font-semibold text-gray-800 transition-colors"
             title="Next year"
           >
             ?
@@ -186,15 +186,15 @@ export default function FixedExpenses() {
         </div>
       </div>
 
-      <div className="mb-8 bg-gray-50 p-6 rounded-lg border">
-        <h2 className="text-lg font-semibold mb-4">New Fixed Expense</h2>
-        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-3 text-gray-900">New Fixed Expense</h2>
+        <div className="flex flex-wrap gap-3 items-center">
           <input
             type="text"
             placeholder="Name"
             value={form.name}
             onChange={(e) => setForm({...form, name: e.target.value})}
-            className="border p-2 rounded bg-white flex-1 min-w-[200px]"
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-48"
           />
           <input
             type="number"
@@ -202,14 +202,14 @@ export default function FixedExpenses() {
             placeholder="Cost"
             value={form.cost}
             onChange={(e) => setForm({...form, cost: e.target.value})}
-            className="border p-2 rounded bg-white w-full sm:w-32"
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-32"
           />
           <input
             type="number"
             placeholder="Due Day (1-31)"
             value={form.dueDay}
             onChange={(e) => setForm({...form, dueDay: e.target.value})}
-            className="border p-2 rounded bg-white w-full sm:w-36"
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-36"
           />
           <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
             Save
@@ -225,38 +225,38 @@ export default function FixedExpenses() {
           action="Add regular expenses like rent, subscriptions or utilities using the form above." 
         />
       ) : (
-        <div className="overflow-x-auto border rounded-lg">
+        <div className="overflow-x-auto border border-gray-200 rounded-lg">
           <table className="w-full border-collapse text-sm min-w-[1000px]">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2 text-left">Expense</th>
-                <th className="border p-2 text-left">Cost</th>
-                <th className="border p-2 text-left">Due</th>
+              <tr className="bg-gray-100 text-gray-900">
+                <th className="border border-gray-200 p-2 text-left">Expense</th>
+                <th className="border border-gray-200 p-2 text-left">Cost</th>
+                <th className="border border-gray-200 p-2 text-left">Due</th>
                 {MONTHS.map((month) => (
-                  <th key={month} className="border p-2 text-center">{month}</th>
+                  <th key={month} className="border border-gray-200 p-2 text-center">{month}</th>
                 ))}
-                <th className="border p-2 text-center bg-gray-200 font-semibold">Total Paid</th>
-                <th className="border p-2 text-center">Actions</th>
+                <th className="border border-gray-200 p-2 text-center bg-gray-200 font-semibold text-gray-900">Total Paid</th>
+                <th className="border border-gray-200 p-2 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
               {fixedExpenses.map((expense) => (
-                <tr key={expense.id} className="hover:bg-gray-50">
-                  <td className="border p-2">
+                <tr key={expense.id} className="hover:bg-gray-50 text-gray-900">
+                  <td className="border border-gray-200 p-2">
                     {editingId === expense.id
-                      ? <input value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="border p-1 rounded w-full" />
-                      : <span className="font-medium">{expense.name}</span>
+                      ? <input value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="border border-gray-300 p-1 rounded w-full bg-white text-gray-900" />
+                      : <span className="font-medium text-gray-900">{expense.name}</span>
                     }
                   </td>
-                  <td className="border p-2 font-medium">
+                  <td className="border border-gray-200 p-2 font-medium text-gray-900">
                     {editingId === expense.id
-                      ? <input type="number" value={editForm.cost} onChange={(e) => setEditForm({...editForm, cost: e.target.value})} className="border p-1 rounded w-24" />
+                      ? <input type="number" value={editForm.cost} onChange={(e) => setEditForm({...editForm, cost: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
                       : formatMoney(expense.cost)
                     }
                   </td>
-                  <td className="border p-2">
+                  <td className="border border-gray-200 p-2 text-gray-800">
                     {editingId === expense.id
-                      ? <input type="number" value={editForm.dueDay} onChange={(e) => setEditForm({...editForm, dueDay: e.target.value})} className="border p-1 rounded w-16" />
+                      ? <input type="number" value={editForm.dueDay} onChange={(e) => setEditForm({...editForm, dueDay: e.target.value})} className="border border-gray-300 p-1 rounded w-16 bg-white text-gray-900" />
                       : expense.dueDay
                     }
                   </td>
@@ -264,7 +264,7 @@ export default function FixedExpenses() {
                     const payment = getPaymentForMonth(expense.payments, monthIndex)
                     const isPaid = payment?.paid ?? false
                     return (
-                      <td key={month} className="border p-2 text-center">
+                      <td key={month} className="border border-gray-200 p-2 text-center">
                         <button
                           onClick={() => togglePayment(expense.id, monthIndex, isPaid)}
                           className={`w-7 h-7 rounded-full text-white text-xs font-bold transition-colors ${
@@ -277,10 +277,10 @@ export default function FixedExpenses() {
                       </td>
                     )
                   })}
-                  <td className="border p-2 text-center font-bold text-green-700">
+                  <td className="border border-gray-200 p-2 text-center font-bold text-green-700">
                     {formatMoney(getTotalPaid(expense))}
                   </td>
-                  <td className="border p-2 text-center">
+                  <td className="border border-gray-200 p-2 text-center">
                     {editingId === expense.id ? (
                       <div className="flex gap-1 justify-center">
                         <button onClick={() => handleUpdate(expense.id)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium">Save</button>
@@ -297,12 +297,12 @@ export default function FixedExpenses() {
               ))}
             </tbody>
             <tfoot>
-              <tr className="bg-gray-100">
-                <td colSpan={3 + MONTHS.length} className="border p-2 text-right font-bold">Annual Total Paid:</td>
-                <td className="border p-2 text-center font-bold text-green-700">
+              <tr className="bg-gray-100 text-gray-900">
+                <td colSpan={3 + MONTHS.length} className="border border-gray-200 p-2 text-right font-bold text-gray-900">Annual Total Paid:</td>
+                <td className="border border-gray-200 p-2 text-center font-bold text-green-700">
                   {formatMoney(fixedExpenses.reduce((acc, expense) => acc + getTotalPaid(expense), 0))}
                 </td>
-                <td className="border p-2"></td>
+                <td className="border border-gray-200 p-2"></td>
               </tr>
             </tfoot>
           </table>

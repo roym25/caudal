@@ -125,24 +125,24 @@ export default function VariableExpenses() {
   }
 
   return (
-    <main className="p-6 max-w-6xl mx-auto w-full">
-      <h1 className="text-2xl font-bold mb-6">Variable Expenses</h1>
+    <main className="p-6 max-w-6xl mx-auto w-full text-gray-900">
+      <h1 className="text-2xl font-bold mb-6 text-gray-900">Variable Expenses</h1>
 
-      <div className="mb-8 bg-gray-50 p-6 rounded-lg border">
-        <h2 className="text-lg font-semibold mb-4">New Variable Expense</h2>
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-3 text-gray-900">New Variable Expense</h2>
         <div className="flex flex-col gap-3 max-w-md">
           <input 
             type="text" 
             placeholder="Description" 
             value={form.description} 
             onChange={(e) => setForm({...form, description: e.target.value})} 
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
           <input 
             type="date" 
             value={form.date} 
             onChange={(e) => setForm({...form, date: e.target.value})} 
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
           <input 
             type="number" 
@@ -150,7 +150,7 @@ export default function VariableExpenses() {
             placeholder="Amount" 
             value={form.amount} 
             onChange={(e) => setForm({...form, amount: e.target.value})} 
-            className="border p-2 rounded bg-white" 
+            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
           />
           <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-medium transition-colors">
             Save
@@ -159,7 +159,7 @@ export default function VariableExpenses() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-4">Variable Expenses List</h2>
+        <h2 className="text-lg font-semibold mb-4 text-gray-900">Variable Expenses List</h2>
 
         {loading ? (
           <LoadingTable columns={4} rows={3} />
@@ -169,38 +169,38 @@ export default function VariableExpenses() {
             action="Record purchases, dining out, or other daily expenses using the form above." 
           />
         ) : (
-          <div className="overflow-x-auto border rounded-lg">
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="w-full border-collapse min-w-[600px]">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-2 text-left">Description</th>
-                  <th className="border p-2 text-left">Date</th>
-                  <th className="border p-2 text-left">Amount</th>
-                  <th className="border p-2 text-left">Actions</th>
+                <tr className="bg-gray-100 text-gray-900">
+                  <th className="border border-gray-200 p-2 text-left">Description</th>
+                  <th className="border border-gray-200 p-2 text-left">Date</th>
+                  <th className="border border-gray-200 p-2 text-left">Amount</th>
+                  <th className="border border-gray-200 p-2 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {variableExpenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-gray-50">
-                    <td className="border p-2">
+                  <tr key={expense.id} className="hover:bg-gray-50 text-gray-900">
+                    <td className="border border-gray-200 p-2">
                       {editingId === expense.id
-                        ? <input type="text" value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})} className="border p-1 rounded w-full" />
-                        : expense.description
+                        ? <input type="text" value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})} className="border border-gray-300 p-1 rounded w-full bg-white text-gray-900" />
+                        : <span className="font-medium text-gray-900">{expense.description}</span>
                       }
                     </td>
-                    <td className="border p-2">
+                    <td className="border border-gray-200 p-2 text-gray-800">
                       {editingId === expense.id
-                        ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} className="border p-1 rounded" />
+                        ? <input type="date" value={editForm.date} onChange={(e) => setEditForm({...editForm, date: e.target.value})} className="border border-gray-300 p-1 rounded bg-white text-gray-900" />
                         : formatDate(expense.date)
                       }
                     </td>
-                    <td className="border p-2 font-medium">
+                    <td className="border border-gray-200 p-2 font-medium text-gray-900">
                       {editingId === expense.id
-                        ? <input type="number" value={editForm.amount} onChange={(e) => setEditForm({...editForm, amount: e.target.value})} className="border p-1 rounded w-24" />
+                        ? <input type="number" value={editForm.amount} onChange={(e) => setEditForm({...editForm, amount: e.target.value})} className="border border-gray-300 p-1 rounded w-24 bg-white text-gray-900" />
                         : formatMoney(expense.amount)
                       }
                     </td>
-                    <td className="border p-2">
+                    <td className="border border-gray-200 p-2">
                       {editingId === expense.id ? (
                         <div className="flex gap-1">
                           <button onClick={() => handleUpdate(expense.id)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium">Save</button>
