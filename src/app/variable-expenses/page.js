@@ -10,6 +10,7 @@ export default function VariableExpenses() {
   const [variableExpenses, setVariableExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     description: '', date: '', amount: ''
   })
@@ -65,6 +66,7 @@ export default function VariableExpenses() {
       }
 
       setForm({ description: '', date: '', amount: '' })
+      setShowForm(false)
       showToast('Variable expense added successfully')
       fetchVariableExpenses()
     } catch (err) {
@@ -126,37 +128,56 @@ export default function VariableExpenses() {
 
   return (
     <main className="p-6 max-w-6xl mx-auto w-full text-gray-900">
-      <h1 className="text-2xl font-bold mb-6 text-gray-900">Variable Expenses</h1>
-
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-3 text-gray-900">New Variable Expense</h2>
-        <div className="flex flex-col gap-3 max-w-md">
-          <input 
-            type="text" 
-            placeholder="Description" 
-            value={form.description} 
-            onChange={(e) => setForm({...form, description: e.target.value})} 
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <input 
-            type="date" 
-            value={form.date} 
-            onChange={(e) => setForm({...form, date: e.target.value})} 
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <input 
-            type="number" 
-            step="0.01" 
-            placeholder="Amount" 
-            value={form.amount} 
-            onChange={(e) => setForm({...form, amount: e.target.value})} 
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-medium transition-colors">
-            Save
-          </button>
-        </div>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Variable Expenses</h1>
+        <button
+          onClick={() => setShowForm(prev => !prev)}
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 shadow-sm ${
+            showForm
+              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
+        >
+          {showForm ? "? Cerrar formulario" : "+ Nuevo Gasto Variable"}
+        </button>
       </div>
+
+      {showForm && (
+        <div className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50/70 animate-fade-in">
+          <h2 className="text-base font-semibold mb-3 text-gray-800">Registrar Nuevo Gasto Variable</h2>
+          <div className="flex flex-col gap-3 max-w-md">
+            <input 
+              type="text" 
+              placeholder="Description" 
+              value={form.description} 
+              onChange={(e) => setForm({...form, description: e.target.value})} 
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <input 
+              type="date" 
+              value={form.date} 
+              onChange={(e) => setForm({...form, date: e.target.value})} 
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <input 
+              type="number" 
+              step="0.01" 
+              placeholder="Amount" 
+              value={form.amount} 
+              onChange={(e) => setForm({...form, amount: e.target.value})} 
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <div className="flex gap-2 pt-1">
+              <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
+                Guardar
+              </button>
+              <button onClick={() => setShowForm(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded font-medium transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="text-lg font-semibold mb-4 text-gray-900">Variable Expenses List</h2>
@@ -165,8 +186,8 @@ export default function VariableExpenses() {
           <LoadingTable columns={4} rows={3} />
         ) : variableExpenses.length === 0 ? (
           <EmptyState 
-            message="No variable expenses recorded" 
-            action="Record purchases, dining out, or other daily expenses using the form above." 
+            message="No hay gastos variables registrados" 
+            action="Haz clic en '+ Nuevo Gasto Variable' para registrar salidas, compras o pagos diarios." 
           />
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg">

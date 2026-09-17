@@ -10,6 +10,7 @@ export default function Payroll() {
   const [payrolls, setPayrolls] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: ''
   })
@@ -74,6 +75,7 @@ export default function Payroll() {
       }
 
       setForm({ date: '', week: '', amountReceived: '', isr: '', savingsFund: '', notes: '' })
+      setShowForm(false)
       showToast('Payroll record added successfully')
       fetchPayrolls()
     } catch (err) {
@@ -170,73 +172,92 @@ export default function Payroll() {
 
   return (
     <main className="p-6 max-w-6xl mx-auto w-full text-gray-900">
-      <h1 className="text-2xl font-bold mb-6 text-gray-900">Payroll</h1>
-
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-3 text-gray-900">New Payroll</h2>
-        <div className="flex flex-col gap-3 max-w-md">
-          <input 
-            type="date" 
-            value={form.date} 
-            onChange={(e) => setForm({...form, date: e.target.value})}
-            onKeyDown={(e) => e.key === 'Enter' && weekRef.current?.focus()}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <input 
-            type="number" 
-            ref={weekRef}
-            placeholder="Week (1-5)" 
-            value={form.week} 
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val.length <= 1) {
-                setForm({...form, week: val});
-              }
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && amountRef.current?.focus()}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <input 
-            type="number" 
-            ref={amountRef}
-            placeholder="Amount Received" 
-            value={form.amountReceived} 
-            onChange={(e) => setForm({...form, amountReceived: e.target.value})}
-            onKeyDown={(e) => e.key === 'Enter' && isrRef.current?.focus()}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <input 
-            type="number" 
-            ref={isrRef}
-            placeholder="ISR" 
-            value={form.isr} 
-            onChange={(e) => setForm({...form, isr: e.target.value})}
-            onKeyDown={(e) => e.key === 'Enter' && savingsRef.current?.focus()}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <input 
-            type="number" 
-            ref={savingsRef}
-            placeholder="Savings Fund" 
-            value={form.savingsFund} 
-            onChange={(e) => setForm({...form, savingsFund: e.target.value})}
-            onKeyDown={(e) => e.key === 'Enter' && notesRef.current?.focus()}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <input 
-            type="text" 
-            ref={notesRef}
-            placeholder="Notes" 
-            value={form.notes} 
-            onChange={(e) => setForm({...form, notes: e.target.value})}
-            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
-          />
-          <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-medium transition-colors">
-            Save
-          </button>
-        </div>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Payroll</h1>
+        <button
+          onClick={() => setShowForm(prev => !prev)}
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 shadow-sm ${
+            showForm
+              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
+        >
+          {showForm ? "? Cerrar formulario" : "+ Nueva N?mina"}
+        </button>
       </div>
+
+      {showForm && (
+        <div className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50/70 animate-fade-in">
+          <h2 className="text-base font-semibold mb-3 text-gray-800">Registrar Nueva N?mina</h2>
+          <div className="flex flex-col gap-3 max-w-md">
+            <input 
+              type="date" 
+              value={form.date} 
+              onChange={(e) => setForm({...form, date: e.target.value})}
+              onKeyDown={(e) => e.key === 'Enter' && weekRef.current?.focus()}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <input 
+              type="number" 
+              ref={weekRef}
+              placeholder="Week (1-5)" 
+              value={form.week} 
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val.length <= 1) {
+                  setForm({...form, week: val});
+                }
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && amountRef.current?.focus()}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <input 
+              type="number" 
+              ref={amountRef}
+              placeholder="Amount Received" 
+              value={form.amountReceived} 
+              onChange={(e) => setForm({...form, amountReceived: e.target.value})}
+              onKeyDown={(e) => e.key === 'Enter' && isrRef.current?.focus()}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <input 
+              type="number" 
+              ref={isrRef}
+              placeholder="ISR" 
+              value={form.isr} 
+              onChange={(e) => setForm({...form, isr: e.target.value})}
+              onKeyDown={(e) => e.key === 'Enter' && savingsRef.current?.focus()}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <input 
+              type="number" 
+              ref={savingsRef}
+              placeholder="Savings Fund" 
+              value={form.savingsFund} 
+              onChange={(e) => setForm({...form, savingsFund: e.target.value})}
+              onKeyDown={(e) => e.key === 'Enter' && notesRef.current?.focus()}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <input 
+              type="text" 
+              ref={notesRef}
+              placeholder="Notes" 
+              value={form.notes} 
+              onChange={(e) => setForm({...form, notes: e.target.value})}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900" 
+            />
+            <div className="flex gap-2 pt-1">
+              <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
+                Guardar
+              </button>
+              <button onClick={() => setShowForm(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded font-medium transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="text-lg font-semibold mb-4 text-gray-900">Payroll History</h2>
@@ -245,8 +266,8 @@ export default function Payroll() {
           <LoadingTable columns={7} rows={4} />
         ) : payrolls.length === 0 ? (
           <EmptyState 
-            message="No payroll records registered" 
-            action="Fill in the form above to add your first payroll payment." 
+            message="No hay n?minas registradas a?n" 
+            action="Haz clic en '+ Nueva N?mina' para agregar tu primer pago." 
           />
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg">

@@ -12,6 +12,7 @@ export default function FixedExpenses() {
   const [fixedExpenses, setFixedExpenses] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [showForm, setShowForm] = useState(false)
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear())
   const [form, setForm] = useState({ name: '', cost: '', dueDay: '' })
   const [editingId, setEditingId] = useState(null)
@@ -65,6 +66,7 @@ export default function FixedExpenses() {
       }
 
       setForm({ name: '', cost: '', dueDay: '' })
+      setShowForm(false)
       showToast('Fixed expense added successfully')
       fetchFixedExpenses()
     } catch (err) {
@@ -164,65 +166,83 @@ export default function FixedExpenses() {
   return (
     <main className="p-6 max-w-6xl mx-auto w-full text-gray-900">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Fixed Expenses</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentYear(y => y - 1)}
-            className="px-3 py-1 bg-white hover:bg-gray-100 rounded border border-gray-300 text-sm font-semibold text-gray-800 transition-colors"
-            title="Previous year"
-          >
-            ?
-          </button>
-          <span className="text-base font-bold min-w-[4rem] text-center text-gray-900">
-            {currentYear}
-          </span>
-          <button
-            onClick={() => setCurrentYear(y => y + 1)}
-            className="px-3 py-1 bg-white hover:bg-gray-100 rounded border border-gray-300 text-sm font-semibold text-gray-800 transition-colors"
-            title="Next year"
-          >
-            ?
-          </button>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-900">Fixed Expenses</h1>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentYear(y => y - 1)}
+              className="px-2.5 py-1 bg-white hover:bg-gray-100 rounded border border-gray-300 text-sm font-semibold text-gray-800 transition-colors"
+              title="A?o anterior"
+            >
+              ?
+            </button>
+            <span className="text-base font-bold min-w-[3.5rem] text-center text-gray-900">
+              {currentYear}
+            </span>
+            <button
+              onClick={() => setCurrentYear(y => y + 1)}
+              className="px-2.5 py-1 bg-white hover:bg-gray-100 rounded border border-gray-300 text-sm font-semibold text-gray-800 transition-colors"
+              title="Siguiente a?o"
+            >
+              ?
+            </button>
+          </div>
         </div>
+
+        <button
+          onClick={() => setShowForm(prev => !prev)}
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 shadow-sm self-start sm:self-auto ${
+            showForm
+              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
+        >
+          {showForm ? "? Cerrar formulario" : "+ Nuevo Gasto Fijo"}
+        </button>
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-3 text-gray-900">New Fixed Expense</h2>
-        <div className="flex flex-wrap gap-3 items-center">
-          <input
-            type="text"
-            placeholder="Name"
-            value={form.name}
-            onChange={(e) => setForm({...form, name: e.target.value})}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-48"
-          />
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Cost"
-            value={form.cost}
-            onChange={(e) => setForm({...form, cost: e.target.value})}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-32"
-          />
-          <input
-            type="number"
-            placeholder="Due Day (1-31)"
-            value={form.dueDay}
-            onChange={(e) => setForm({...form, dueDay: e.target.value})}
-            className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-36"
-          />
-          <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
-            Save
-          </button>
+      {showForm && (
+        <div className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50/70 animate-fade-in">
+          <h2 className="text-base font-semibold mb-3 text-gray-800">Registrar Nuevo Gasto Fijo</h2>
+          <div className="flex flex-wrap gap-3 items-center">
+            <input
+              type="text"
+              placeholder="Name"
+              value={form.name}
+              onChange={(e) => setForm({...form, name: e.target.value})}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-48"
+            />
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Cost"
+              value={form.cost}
+              onChange={(e) => setForm({...form, cost: e.target.value})}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-32"
+            />
+            <input
+              type="number"
+              placeholder="Due Day (1-31)"
+              value={form.dueDay}
+              onChange={(e) => setForm({...form, dueDay: e.target.value})}
+              className="border border-gray-300 p-2 rounded bg-white text-gray-900 w-36"
+            />
+            <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-medium transition-colors">
+              Guardar
+            </button>
+            <button onClick={() => setShowForm(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded font-medium transition-colors">
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {loading ? (
         <LoadingTable columns={15} rows={3} />
       ) : fixedExpenses.length === 0 ? (
         <EmptyState 
-          message="No fixed expenses defined" 
-          action="Add regular expenses like rent, subscriptions or utilities using the form above." 
+          message="No hay gastos fijos definidos" 
+          action="Haz clic en '+ Nuevo Gasto Fijo' para registrar servicios, rentas o suscripciones." 
         />
       ) : (
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
