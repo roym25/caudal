@@ -23,12 +23,14 @@ export default function VariableExpensesPage() {
     description: '',
     date: new Date().toISOString().split('T')[0],
     amount: '',
+    comments: '',
   });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({
     description: '',
     date: '',
     amount: '',
+    comments: '',
   });
 
   const showToast = (message, type = 'success') => {
@@ -58,7 +60,7 @@ export default function VariableExpensesPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.description || !form.date || !form.amount) {
-      showToast('Please fill in all fields', 'error');
+      showToast('Please fill in all required fields', 'error');
       return;
     }
 
@@ -67,8 +69,10 @@ export default function VariableExpensesPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...form,
+          description: form.description,
+          date: form.date,
           amount: parseFloat(form.amount),
+          comments: form.comments ? form.comments.trim() : null,
         }),
       });
 
@@ -82,6 +86,7 @@ export default function VariableExpensesPage() {
         description: '',
         date: new Date().toISOString().split('T')[0],
         amount: '',
+        comments: '',
       });
       setShowForm(false);
       showToast('Variable expense added successfully');
@@ -98,6 +103,7 @@ export default function VariableExpensesPage() {
       description: expense.description,
       date: new Date(expense.date).toISOString().split('T')[0],
       amount: expense.amount,
+      comments: expense.comments || '',
     });
   };
 
@@ -107,8 +113,10 @@ export default function VariableExpensesPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...editForm,
+          description: editForm.description,
+          date: editForm.date,
           amount: parseFloat(editForm.amount),
+          comments: editForm.comments ? editForm.comments.trim() : null,
         }),
       });
 
@@ -196,6 +204,16 @@ export default function VariableExpensesPage() {
               required
             />
           </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Comments (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. Paid in cash, warranty included"
+              value={form.comments}
+              onChange={(e) => setForm({ ...form, comments: e.target.value })}
+              className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-orange transition-colors"
+            />
+          </div>
           <div className="pt-4">
             <button
               type="submit"
@@ -208,7 +226,7 @@ export default function VariableExpensesPage() {
       </SlidePanel>
 
       {loading ? (
-        <LoadingTable columns={4} rows={3} />
+        <LoadingTable columns={5} rows={3} />
       ) : variableExpenses.length === 0 ? (
         <EmptyState
           message="No variable expenses recorded yet"
@@ -216,12 +234,13 @@ export default function VariableExpensesPage() {
         />
       ) : (
         <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap min-w-[600px]">
+          <table className="w-full text-sm text-left whitespace-nowrap min-w-[700px]">
             <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
               <tr>
                 <th className="px-4 py-3 font-medium">Description</th>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 text-right font-medium">Amount</th>
+                <th className="px-4 py-3 font-medium">Comments</th>
                 <th className="px-4 py-3 text-center font-medium w-24">Actions</th>
               </tr>
             </thead>
@@ -263,6 +282,18 @@ export default function VariableExpensesPage() {
                       />
                     ) : (
                       formatMoney(expense.amount)
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-caudal-text-muted truncate max-w-[200px]" title={expense.comments || ''}>
+                    {editingId === expense.id ? (
+                      <input
+                        type="text"
+                        value={editForm.comments}
+                        onChange={(e) => setEditForm({ ...editForm, comments: e.target.value })}
+                        className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-caudal-text focus:outline-none focus:border-caudal-orange w-full min-w-[150px]"
+                      />
+                    ) : (
+                      expense.comments || '-'
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -313,7 +344,7 @@ export default function VariableExpensesPage() {
                 <td className="px-4 py-3 text-right font-bold text-caudal-orange">
                   {formatMoney(totalVariable)}
                 </td>
-                <td></td>
+                <td colSpan={2}></td>
               </tr>
             </tfoot>
           </table>

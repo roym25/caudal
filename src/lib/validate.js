@@ -128,6 +128,7 @@ export function validateVariableExpense(body) {
       description: String(body.description).trim(),
       date,
       amount,
+      comments: body.comments ? String(body.comments).trim() : null,
     },
   }
 }

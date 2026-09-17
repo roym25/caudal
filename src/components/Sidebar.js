@@ -40,10 +40,7 @@ export default function Sidebar() {
       <div className={`fixed top-0 left-0 h-full w-60 bg-caudal-surface border-r border-caudal-border z-50 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-caudal-border">
-          <Link href="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
-            <div className="w-6 h-6 bg-caudal-green rounded-tl-full rounded-br-full rounded-tr-sm rounded-bl-full flex items-center justify-center">
-              <div className="w-2 h-2 bg-caudal-surface rounded-full"></div>
-            </div>
+          <Link href="/" className="flex items-center" onClick={() => setIsOpen(false)}>
             <span className="font-bold text-xl text-caudal-green tracking-tight">Caudal</span>
           </Link>
           <button 

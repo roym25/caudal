@@ -48,5 +48,6 @@ model VariableExpense {
   description String
   date        DateTime
   amount      Float
+  comments    String?
   createdAt   DateTime @default(now())
 }
