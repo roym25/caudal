@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import prisma from '../src/lib/prisma.js'
+import { validatePayroll } from '../src/lib/validate.js'
 
 async function runTests() {
   console.log('🧪 Running Caudal Database & Model Integration Tests...\n')
@@ -73,6 +74,25 @@ async function runTests() {
     console.log('   ✓ Cleaned up test Payroll')
   } catch (err) {
     console.error('   ❌ Payroll test failed:', err.message)
+    failed++
+  }
+
+  // Test 2b: validatePayroll auto 1:1 match when employerMatch is omitted
+  try {
+    console.log('\n2b. Testing validatePayroll auto 1:1 match...')
+    const validated = validatePayroll({
+      date: '2026-05-01',
+      week: 2,
+      amountReceived: 5200,
+      isr: 850,
+      savingsFund: 250,
+      // employerMatch omitted
+    })
+    if (!validated.valid) throw new Error('Validation failed: ' + validated.errors.join(', '))
+    if (validated.data.employerMatch !== 250) throw new Error(`Expected employerMatch to be 250, got ${validated.data.employerMatch}`)
+    console.log('   ✓ validatePayroll automatically defaulted employerMatch to savingsFund:', validated.data.employerMatch)
+  } catch (err) {
+    console.error('   ❌ validatePayroll test failed:', err.message)
     failed++
   }
 

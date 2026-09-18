@@ -21,7 +21,6 @@ export default function PayrollPage() {
     amountReceived: '',
     isr: '',
     savingsFund: '',
-    employerMatch: '',
     notes: ''
   });
 
@@ -61,6 +60,7 @@ export default function PayrollPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const savings = Number(formData.savingsFund || 0);
       const res = await fetch('/api/payroll', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,8 +69,8 @@ export default function PayrollPage() {
           week: Number(formData.week),
           amountReceived: Number(formData.amountReceived),
           isr: Number(formData.isr || 0),
-          savingsFund: Number(formData.savingsFund || 0),
-          employerMatch: Number(formData.employerMatch || 0)
+          savingsFund: savings,
+          employerMatch: savings,
         }),
       });
 
@@ -86,7 +86,6 @@ export default function PayrollPage() {
         amountReceived: '',
         isr: '',
         savingsFund: '',
-        employerMatch: '',
         notes: ''
       });
       setShowForm(false);
@@ -118,7 +117,6 @@ export default function PayrollPage() {
       amountReceived: payroll.amountReceived,
       isr: payroll.isr,
       savingsFund: payroll.savingsFund,
-      employerMatch: payroll.employerMatch || 0,
       notes: payroll.notes || ''
     });
   };
@@ -130,6 +128,7 @@ export default function PayrollPage() {
 
   const handleUpdate = async (id) => {
     try {
+      const savings = Number(editFormData.savingsFund || 0);
       const res = await fetch(`/api/payroll/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -138,8 +137,8 @@ export default function PayrollPage() {
           week: Number(editFormData.week),
           amountReceived: Number(editFormData.amountReceived),
           isr: Number(editFormData.isr || 0),
-          savingsFund: Number(editFormData.savingsFund || 0),
-          employerMatch: Number(editFormData.employerMatch || 0)
+          savingsFund: savings,
+          employerMatch: savings,
         }),
       });
 
@@ -202,12 +201,25 @@ export default function PayrollPage() {
             <input required type="number" step="0.01" name="isr" placeholder="0.00" value={formData.isr} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
           </div>
           <div>
-            <label className="block text-sm text-caudal-text-muted mb-1">Savings Fund (Your Deduction)</label>
-            <input type="number" step="0.01" name="savingsFund" placeholder="0.00" value={formData.savingsFund} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
-          </div>
-          <div>
-            <label className="block text-sm text-caudal-text-muted mb-1">Employer Match</label>
-            <input type="number" step="0.01" name="employerMatch" placeholder="0.00" value={formData.employerMatch} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+            <div className="flex justify-between items-baseline mb-1">
+              <label className="block text-sm text-caudal-text-muted">Savings Fund (Deduction)</label>
+              <span className="text-xs text-caudal-green font-medium">1:1 match auto-applied</span>
+            </div>
+            <input
+              type="number"
+              step="0.01"
+              name="savingsFund"
+              placeholder="0.00"
+              value={formData.savingsFund}
+              onChange={handleInputChange}
+              className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors"
+            />
+            {Number(formData.savingsFund) > 0 && (
+              <p className="text-xs text-caudal-text-dim mt-1.5 flex items-center justify-between">
+                <span>Company match (+100%):</span>
+                <span className="text-caudal-green font-semibold">+{formatMoney(Number(formData.savingsFund))} (Total: {formatMoney(Number(formData.savingsFund) * 2)})</span>
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm text-caudal-text-muted mb-1">Notes</label>
@@ -239,7 +251,7 @@ export default function PayrollPage() {
                       <th className="px-4 py-3 text-right font-medium">Amount</th>
                       <th className="px-4 py-3 text-right font-medium">ISR</th>
                       <th className="px-4 py-3 text-right font-medium">Savings</th>
-                      <th className="px-4 py-3 text-right font-medium">Match</th>
+                      <th className="px-4 py-3 text-right font-medium">Match (1:1)</th>
                       <th className="px-4 py-3 font-medium">Notes</th>
                       <th className="px-4 py-3 text-center font-medium w-24">Actions</th>
                     </tr>
@@ -264,8 +276,8 @@ export default function PayrollPage() {
                             <td className="px-4 py-3 text-right">
                               <input type="number" step="0.01" name="savingsFund" value={editFormData.savingsFund} onChange={handleEditInputChange} className="w-full min-w-[80px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
                             </td>
-                            <td className="px-4 py-3 text-right">
-                              <input type="number" step="0.01" name="employerMatch" value={editFormData.employerMatch} onChange={handleEditInputChange} className="w-full min-w-[80px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                            <td className="px-4 py-3 text-right text-caudal-green font-medium">
+                              +{formatMoney(Number(editFormData.savingsFund || 0))}
                             </td>
                             <td className="px-4 py-3">
                               <input type="text" name="notes" value={editFormData.notes} onChange={handleEditInputChange} className="w-full min-w-[120px] bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
@@ -288,7 +300,7 @@ export default function PayrollPage() {
                             <td className="px-4 py-3 text-right font-medium text-caudal-green">{formatMoney(record.amountReceived)}</td>
                             <td className="px-4 py-3 text-right font-medium text-caudal-orange">{formatMoney(record.isr)}</td>
                             <td className="px-4 py-3 text-right text-caudal-green">{formatMoney(record.savingsFund)}</td>
-                            <td className="px-4 py-3 text-right text-caudal-green">{formatMoney(record.employerMatch || 0)}</td>
+                            <td className="px-4 py-3 text-right text-caudal-green">+{formatMoney(record.employerMatch || record.savingsFund || 0)}</td>
                             <td className="px-4 py-3 text-caudal-text-muted truncate max-w-[180px]" title={record.notes || ''}>{record.notes || '-'}</td>
                             <td className="px-4 py-3 text-center">
                               <div className="flex items-center justify-center gap-1.5">

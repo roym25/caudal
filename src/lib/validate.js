@@ -45,9 +45,13 @@ export function validatePayroll(body) {
     errors.push('savingsFund must be a non-negative number')
   }
 
-  const employerMatch = parseFloat(body.employerMatch || 0)
-  if (isNaN(employerMatch) || employerMatch < 0) {
-    errors.push('employerMatch must be a non-negative number')
+  // If employerMatch is omitted or null, default it to savingsFund (1:1 match)
+  let employerMatch = savingsFund
+  if (body.employerMatch !== undefined && body.employerMatch !== null && body.employerMatch !== '') {
+    employerMatch = parseFloat(body.employerMatch)
+    if (isNaN(employerMatch) || employerMatch < 0) {
+      errors.push('employerMatch must be a non-negative number')
+    }
   }
 
   const date = parseDate(body.date)

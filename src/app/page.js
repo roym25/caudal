@@ -104,7 +104,7 @@ export default function DashboardPage() {
 
   // Savings Fund calculations (all payrolls registered)
   const employeeSavings = payrollData.reduce((sum, item) => sum + (item.savingsFund || 0), 0);
-  const employerSavings = payrollData.reduce((sum, item) => sum + (item.employerMatch || 0), 0);
+  const employerSavings = payrollData.reduce((sum, item) => sum + (item.employerMatch || item.savingsFund || 0), 0);
   const totalSavings = employeeSavings + employerSavings;
   const totalWeeks = payrollData.length;
   const avgWeeklySavings = totalWeeks > 0 ? totalSavings / totalWeeks : 0;
