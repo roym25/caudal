@@ -85,7 +85,10 @@ export default function DashboardPage() {
   let totalFixedExpenses = 0;
   if (Array.isArray(fixedExpensesData)) {
     if (isAll) {
-      totalFixedExpenses = fixedExpensesData.reduce((acc, e) => acc + (e.cost || 0), 0);
+      totalFixedExpenses = fixedExpensesData.reduce((acc, e) => {
+        const paidCount = e.payments?.filter(p => p.paid).length || 0;
+        return acc + (paidCount * (e.cost || 0));
+      }, 0);
     } else {
       const [year, month] = selectedMonth.split('-').map(Number);
       totalFixedExpenses = fixedExpensesData.reduce((acc, e) => {
