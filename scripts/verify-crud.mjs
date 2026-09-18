@@ -132,6 +132,41 @@ async function runTests() {
     failed++
   }
 
+  // Test 4: Verify query ordering for FixedExpense and VariableExpense
+  try {
+    console.log('\n4. Testing query ordering for FixedExpense and VariableExpense...')
+    const fe1 = await prisma.fixedExpense.create({ data: { name: 'Late Bill', cost: 100, dueDay: 25 } })
+    const fe2 = await prisma.fixedExpense.create({ data: { name: 'Early Bill', cost: 50, dueDay: 3 } })
+
+    const fixedSorted = await prisma.fixedExpense.findMany({
+      where: { id: { in: [fe1.id, fe2.id] } },
+      orderBy: [{ dueDay: 'asc' }, { name: 'asc' }],
+    })
+    if (fixedSorted[0].dueDay !== 3 || fixedSorted[1].dueDay !== 25) {
+      throw new Error(`Fixed expenses not sorted by dueDay asc: expected 3 then 25, got ${fixedSorted[0].dueDay} and ${fixedSorted[1].dueDay}`)
+    }
+    console.log('   ✓ FixedExpense successfully ordered by dueDay asc (Day 3 before Day 25)')
+
+    await prisma.fixedExpense.deleteMany({ where: { id: { in: [fe1.id, fe2.id] } } })
+
+    const ve1 = await prisma.variableExpense.create({ data: { description: 'Old Exp', date: new Date('2026-04-01T12:00:00Z'), amount: 10 } })
+    const ve2 = await prisma.variableExpense.create({ data: { description: 'New Exp', date: new Date('2026-05-01T12:00:00Z'), amount: 20 } })
+
+    const varSorted = await prisma.variableExpense.findMany({
+      where: { id: { in: [ve1.id, ve2.id] } },
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+    })
+    if (varSorted[0].description !== 'New Exp') {
+      throw new Error(`Variable expenses not sorted by date desc: expected New Exp first, got ${varSorted[0].description}`)
+    }
+    console.log('   ✓ VariableExpense successfully ordered by date desc (May before April)')
+
+    await prisma.variableExpense.deleteMany({ where: { id: { in: [ve1.id, ve2.id] } } })
+  } catch (err) {
+    console.error('   ❌ Query ordering test failed:', err.message)
+    failed++
+  }
+
   if (failed > 0) {
     console.error(`\n❌ ${failed} test(s) failed.`)
     process.exit(1)

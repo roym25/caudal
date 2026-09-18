@@ -8,6 +8,10 @@ import {
   CheckIcon,
   XMarkIcon,
   PlusIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
 } from '@/components/icons';
 import Toast from '@/components/Toast';
 import EmptyState from '@/components/EmptyState';
@@ -19,6 +23,9 @@ export default function VariableExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = newest first, 'asc' = oldest first
+  const [hideAllAmounts, setHideAllAmounts] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState(new Set());
   const [form, setForm] = useState({
     description: '',
     date: new Date().toISOString().split('T')[0],
@@ -153,6 +160,40 @@ export default function VariableExpensesPage() {
 
   const totalVariable = variableExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
 
+  const toggleSortOrder = () => {
+    setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+  };
+
+  const toggleHideRow = (id) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleHideAll = () => {
+    if (hideAllAmounts) {
+      setHideAllAmounts(false);
+      setHiddenIds(new Set());
+    } else {
+      setHideAllAmounts(true);
+      setHiddenIds(new Set(variableExpenses.map((e) => e.id)));
+    }
+  };
+
+  const isRowHidden = (id) => hideAllAmounts || hiddenIds.has(id);
+
+  const sortedExpenses = [...variableExpenses].sort((a, b) => {
+    const timeA = new Date(a.date).getTime();
+    const timeB = new Date(b.date).getTime();
+    if (timeA !== timeB) {
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    }
+    return sortOrder === 'desc' ? b.id - a.id : a.id - b.id;
+  });
+
   return (
     <div className="p-6 max-w-6xl mx-auto w-full space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -234,107 +275,157 @@ export default function VariableExpensesPage() {
         />
       ) : (
         <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap min-w-[700px]">
+          <table className="table-fixed w-full text-sm text-left whitespace-nowrap min-w-[750px]">
             <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
               <tr>
-                <th className="px-4 py-3 font-medium">Description</th>
-                <th className="px-4 py-3 font-medium">Date</th>
-                <th className="px-4 py-3 text-right font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Comments</th>
-                <th className="px-4 py-3 text-center font-medium w-24">Actions</th>
+                <th className="w-[30%] px-4 py-3 font-medium">Description</th>
+                <th className="w-[18%] px-4 py-3 font-medium">
+                  <button
+                    type="button"
+                    onClick={toggleSortOrder}
+                    className="inline-flex items-center gap-1.5 hover:text-caudal-text transition-colors group cursor-pointer"
+                    title={sortOrder === 'desc' ? 'Sorted newest first (click to invert)' : 'Sorted oldest first (click to invert)'}
+                  >
+                    <span>Date</span>
+                    <span className="text-caudal-orange">
+                      {sortOrder === 'desc' ? <ArrowDownIcon className="w-3.5 h-3.5" /> : <ArrowUpIcon className="w-3.5 h-3.5" />}
+                    </span>
+                  </button>
+                </th>
+                <th className="w-[18%] px-4 py-3 text-right font-medium">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Amount</span>
+                    <button
+                      type="button"
+                      onClick={toggleHideAll}
+                      className="p-1 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface rounded transition-colors cursor-pointer"
+                      title={hideAllAmounts ? 'Show all amounts' : 'Hide all amounts (Privacy mode)'}
+                      aria-label={hideAllAmounts ? 'Show all amounts' : 'Hide all amounts'}
+                    >
+                      {hideAllAmounts ? <EyeSlashIcon className="w-3.5 h-3.5 text-caudal-orange" /> : <EyeIcon className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </th>
+                <th className="w-[22%] px-4 py-3 font-medium">Comments</th>
+                <th className="w-[12%] px-4 py-3 text-center font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-caudal-border text-caudal-text">
-              {variableExpenses.map((expense) => (
-                <tr key={expense.id} className="hover:bg-caudal-surface-alt/50 transition-colors">
-                  <td className="px-4 py-3">
-                    {editingId === expense.id ? (
-                      <input
-                        type="text"
-                        value={editForm.description}
-                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                        className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-caudal-text focus:outline-none focus:border-caudal-orange w-full"
-                      />
-                    ) : (
-                      <span className="font-medium text-caudal-text">{expense.description}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-caudal-text-muted">
-                    {editingId === expense.id ? (
-                      <input
-                        type="date"
-                        value={editForm.date}
-                        onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                        className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-caudal-text focus:outline-none focus:border-caudal-orange"
-                      />
-                    ) : (
-                      formatDate(expense.date)
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium text-caudal-orange">
-                    {editingId === expense.id ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editForm.amount}
-                        onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
-                        className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-right text-caudal-text focus:outline-none focus:border-caudal-orange w-24"
-                      />
-                    ) : (
-                      formatMoney(expense.amount)
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-caudal-text-muted truncate max-w-[200px]" title={expense.comments || ''}>
-                    {editingId === expense.id ? (
-                      <input
-                        type="text"
-                        value={editForm.comments}
-                        onChange={(e) => setEditForm({ ...editForm, comments: e.target.value })}
-                        className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-caudal-text focus:outline-none focus:border-caudal-orange w-full min-w-[150px]"
-                      />
-                    ) : (
-                      expense.comments || '-'
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {editingId === expense.id ? (
-                      <div className="flex items-center justify-center gap-1.5">
+              {sortedExpenses.map((expense) => {
+                const hidden = isRowHidden(expense.id);
+                return (
+                  <tr key={expense.id} className="hover:bg-caudal-surface-alt/50 transition-colors">
+                    <td className="px-4 py-3 truncate" title={expense.description}>
+                      {editingId === expense.id ? (
+                        <input
+                          type="text"
+                          value={editForm.description}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-caudal-text focus:outline-none focus:border-caudal-orange w-full"
+                        />
+                      ) : (
+                        <span className="font-medium text-caudal-text">{expense.description}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-caudal-text-muted">
+                      {editingId === expense.id ? (
+                        <input
+                          type="date"
+                          value={editForm.date}
+                          onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                          className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-caudal-text focus:outline-none focus:border-caudal-orange"
+                        />
+                      ) : (
+                        formatDate(expense.date)
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-caudal-orange">
+                      {editingId === expense.id ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editForm.amount}
+                          onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                          className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-right text-caudal-text focus:outline-none focus:border-caudal-orange w-24"
+                        />
+                      ) : hidden ? (
                         <button
-                          onClick={() => handleUpdate(expense.id)}
-                          className="p-1 text-caudal-green hover:bg-caudal-surface-alt rounded transition-colors"
-                          title="Save"
+                          type="button"
+                          onClick={() => toggleHideRow(expense.id)}
+                          className="font-mono text-caudal-text-dim tracking-widest hover:text-caudal-text transition-colors cursor-pointer select-none"
+                          title="Click to reveal amount"
                         >
-                          <CheckIcon className="w-4 h-4" />
+                          ••••••
                         </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="p-1 text-caudal-text-muted hover:bg-caudal-surface-alt rounded transition-colors"
-                          title="Cancel"
-                        >
-                          <XMarkIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => handleEdit(expense)}
-                          className="p-1 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt rounded transition-colors"
-                          title="Edit"
-                        >
-                          <PencilIcon className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(expense.id)}
-                          className="p-1 text-caudal-text-muted hover:text-caudal-error hover:bg-caudal-surface-alt rounded transition-colors"
-                          title="Delete"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      ) : (
+                        formatMoney(expense.amount)
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-caudal-text-muted truncate" title={expense.comments || ''}>
+                      {editingId === expense.id ? (
+                        <input
+                          type="text"
+                          value={editForm.comments}
+                          onChange={(e) => setEditForm({ ...editForm, comments: e.target.value })}
+                          className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-caudal-text focus:outline-none focus:border-caudal-orange w-full min-w-[150px]"
+                        />
+                      ) : (
+                        expense.comments || '-'
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {editingId === expense.id ? (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleUpdate(expense.id)}
+                            className="p-1 text-caudal-green hover:bg-caudal-surface-alt rounded transition-colors"
+                            title="Save"
+                          >
+                            <CheckIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="p-1 text-caudal-text-muted hover:bg-caudal-surface-alt rounded transition-colors"
+                            title="Cancel"
+                          >
+                            <XMarkIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => toggleHideRow(expense.id)}
+                            className={`p-1 rounded transition-colors ${
+                              hidden
+                                ? 'text-caudal-orange hover:bg-caudal-surface-alt'
+                                : 'text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt'
+                            }`}
+                            title={hidden ? 'Show amount' : 'Hide amount (Password mask)'}
+                            aria-label={hidden ? 'Show amount' : 'Hide amount'}
+                          >
+                            {hidden ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => handleEdit(expense)}
+                            className="p-1 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt rounded transition-colors"
+                            title="Edit"
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(expense.id)}
+                            className="p-1 text-caudal-text-muted hover:text-caudal-error hover:bg-caudal-surface-alt rounded transition-colors"
+                            title="Delete"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="bg-caudal-surface-alt text-caudal-text font-semibold border-t border-caudal-border">
@@ -342,7 +433,11 @@ export default function VariableExpensesPage() {
                   Total Variable Expenses:
                 </td>
                 <td className="px-4 py-3 text-right font-bold text-caudal-orange">
-                  {formatMoney(totalVariable)}
+                  {hideAllAmounts ? (
+                    <span className="font-mono tracking-widest text-caudal-text-dim">••••••</span>
+                  ) : (
+                    formatMoney(totalVariable)
+                  )}
                 </td>
                 <td colSpan={2}></td>
               </tr>

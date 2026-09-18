@@ -17,7 +17,10 @@ export async function GET(request) {
 
     const expenses = await prisma.variableExpense.findMany({
       where,
-      orderBy: { date: "desc" },
+      orderBy: [
+        { date: "desc" },
+        { id: "desc" },
+      ],
     })
     return success(expenses)
   } catch (error) {

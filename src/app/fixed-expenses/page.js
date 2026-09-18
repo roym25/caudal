@@ -38,7 +38,8 @@ export default function FixedExpensesPage() {
       const response = await fetch('/api/fixed-expenses');
       const data = await response.json();
       if (Array.isArray(data)) {
-        setFixedExpenses(data);
+        const sorted = [...data].sort((a, b) => a.dueDay - b.dueDay || a.name.localeCompare(b.name));
+        setFixedExpenses(sorted);
       }
     } catch (err) {
       console.error('Error fetching fixed expenses:', err);
@@ -279,7 +280,7 @@ export default function FixedExpensesPage() {
               <tr>
                 <th className="px-4 py-3 font-medium">Expense</th>
                 <th className="px-4 py-3 text-right font-medium">Cost</th>
-                <th className="px-3 py-3 text-center font-medium">Due</th>
+                <th className="px-3 py-3 text-center font-medium">Due Day</th>
                 {MONTHS.map((month) => (
                   <th key={month} className="px-2 py-3 text-center font-medium">{month}</th>
                 ))}
@@ -313,7 +314,7 @@ export default function FixedExpensesPage() {
                       formatMoney(expense.cost)
                     )}
                   </td>
-                  <td className="px-3 py-3 text-center text-caudal-text-muted">
+                  <td className="px-3 py-3 text-center">
                     {editingId === expense.id ? (
                       <input
                         type="number"
@@ -324,7 +325,9 @@ export default function FixedExpensesPage() {
                         className="bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm text-center text-caudal-text focus:outline-none focus:border-caudal-green w-14"
                       />
                     ) : (
-                      expense.dueDay
+                      <span className="font-mono text-xs text-caudal-text-muted bg-caudal-surface-alt px-2 py-0.5 rounded border border-caudal-border/40">
+                        Day {expense.dueDay}
+                      </span>
                     )}
                   </td>
                   {MONTHS.map((month, monthIndex) => {

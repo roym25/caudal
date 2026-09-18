@@ -8,7 +8,10 @@ export async function GET() {
       include: {
         payments: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: [
+        { dueDay: "asc" },
+        { name: "asc" },
+      ],
     })
     return success(expenses)
   } catch (error) {

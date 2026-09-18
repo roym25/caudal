@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { formatMoney, formatDate } from '@/lib/format';
-import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon, PlusIcon } from '@/components/icons';
+import {
+  PencilIcon,
+  TrashIcon,
+  CheckIcon,
+  XMarkIcon,
+  PlusIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from '@/components/icons';
 import Toast from '@/components/Toast';
 import EmptyState from '@/components/EmptyState';
 import LoadingTable from '@/components/LoadingTable';
@@ -14,6 +22,7 @@ export default function PayrollPage() {
   const [showForm, setShowForm] = useState(false);
   const [toast, setToast] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [collapsedMonths, setCollapsedMonths] = useState({});
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -166,6 +175,23 @@ export default function PayrollPage() {
     return acc;
   }, {});
 
+  const toggleMonth = (month) => {
+    setCollapsedMonths((prev) => ({
+      ...prev,
+      [month]: !prev[month],
+    }));
+  };
+
+  const toggleAllMonths = () => {
+    const months = Object.keys(groupedPayrolls);
+    const allCollapsed = months.length > 0 && months.every((m) => collapsedMonths[m]);
+    const nextState = {};
+    months.forEach((m) => {
+      nextState[m] = !allCollapsed;
+    });
+    setCollapsedMonths(nextState);
+  };
+
   return (
     <div className="p-6 max-w-6xl mx-auto w-full space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -173,13 +199,35 @@ export default function PayrollPage() {
           <h1 className="text-2xl font-bold text-caudal-text">Payroll</h1>
           <p className="text-sm text-caudal-text-muted mt-0.5">Weekly income and deductions</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-caudal-green text-black font-semibold rounded-lg hover:bg-opacity-90 transition-colors"
-        >
-          <PlusIcon className="w-4 h-4" />
-          New Payroll
-        </button>
+        <div className="flex items-center gap-2.5">
+          {payrolls.length > 0 && (
+            <button
+              type="button"
+              onClick={toggleAllMonths}
+              className="flex items-center gap-1.5 px-3 py-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border text-caudal-text-muted hover:text-caudal-text text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+              title="Toggle expand/collapse all months"
+            >
+              {Object.keys(groupedPayrolls).length > 0 && Object.keys(groupedPayrolls).every((m) => collapsedMonths[m]) ? (
+                <>
+                  <ChevronDownIcon className="w-3.5 h-3.5 text-caudal-green" />
+                  <span>Expand All</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUpIcon className="w-3.5 h-3.5 text-caudal-green" />
+                  <span>Collapse All</span>
+                </>
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-caudal-green text-black font-semibold rounded-lg hover:bg-opacity-90 transition-colors cursor-pointer"
+          >
+            <PlusIcon className="w-4 h-4" />
+            New Payroll
+          </button>
+        </div>
       </div>
 
       <SlidePanel isOpen={showForm} onClose={() => setShowForm(false)} title="New Payroll">
@@ -238,89 +286,129 @@ export default function PayrollPage() {
       ) : payrolls.length === 0 ? (
         <EmptyState message="No payroll records registered yet" action="Click '+ New Payroll' to add your first payment." />
       ) : (
-        <div className="space-y-8">
-          {Object.entries(groupedPayrolls).map(([month, records]) => (
-            <div key={month} className="space-y-3">
-              <h2 className="text-base font-semibold text-caudal-text border-l-4 border-caudal-green pl-3">{month}</h2>
-              <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto">
-                <table className="w-full text-sm text-left whitespace-nowrap min-w-[750px]">
-                  <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Date</th>
-                      <th className="px-4 py-3 text-right font-medium">Week</th>
-                      <th className="px-4 py-3 text-right font-medium">Amount</th>
-                      <th className="px-4 py-3 text-right font-medium">ISR</th>
-                      <th className="px-4 py-3 text-right font-medium">Savings</th>
-                      <th className="px-4 py-3 text-right font-medium">Match (1:1)</th>
-                      <th className="px-4 py-3 font-medium">Notes</th>
-                      <th className="px-4 py-3 text-center font-medium w-24">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-caudal-border text-caudal-text">
-                    {records.map(record => (
-                      <tr key={record.id} className="hover:bg-caudal-surface-alt/50 transition-colors">
-                        {editingId === record.id ? (
-                          <>
-                            <td className="px-4 py-3">
-                              <input type="date" name="date" value={editFormData.date} onChange={handleEditInputChange} className="w-full min-w-[130px] bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <input type="number" min="1" max="5" name="week" value={editFormData.week} onChange={handleEditInputChange} className="w-full min-w-[50px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <input type="number" step="0.01" name="amountReceived" value={editFormData.amountReceived} onChange={handleEditInputChange} className="w-full min-w-[90px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <input type="number" step="0.01" name="isr" value={editFormData.isr} onChange={handleEditInputChange} className="w-full min-w-[80px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <input type="number" step="0.01" name="savingsFund" value={editFormData.savingsFund} onChange={handleEditInputChange} className="w-full min-w-[80px] text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
-                            </td>
-                            <td className="px-4 py-3 text-right text-caudal-green font-medium">
-                              +{formatMoney(Number(editFormData.savingsFund || 0))}
-                            </td>
-                            <td className="px-4 py-3">
-                              <input type="text" name="notes" value={editFormData.notes} onChange={handleEditInputChange} className="w-full min-w-[120px] bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button onClick={() => handleUpdate(record.id)} className="p-1 text-caudal-green hover:bg-caudal-surface-alt rounded transition-colors" title="Save">
-                                  <CheckIcon className="w-4 h-4" />
-                                </button>
-                                <button onClick={handleCancelEdit} className="p-1 text-caudal-text-muted hover:bg-caudal-surface-alt rounded transition-colors" title="Cancel">
-                                  <XMarkIcon className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="px-4 py-3">{formatDate(record.date)}</td>
-                            <td className="px-4 py-3 text-right text-caudal-text-muted">{record.week}</td>
-                            <td className="px-4 py-3 text-right font-medium text-caudal-green">{formatMoney(record.amountReceived)}</td>
-                            <td className="px-4 py-3 text-right font-medium text-caudal-orange">{formatMoney(record.isr)}</td>
-                            <td className="px-4 py-3 text-right text-caudal-green">{formatMoney(record.savingsFund)}</td>
-                            <td className="px-4 py-3 text-right text-caudal-green">+{formatMoney(record.employerMatch || record.savingsFund || 0)}</td>
-                            <td className="px-4 py-3 text-caudal-text-muted truncate max-w-[180px]" title={record.notes || ''}>{record.notes || '-'}</td>
-                            <td className="px-4 py-3 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button onClick={() => handleEdit(record)} className="p-1 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt rounded transition-colors" title="Edit">
-                                  <PencilIcon className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => handleDelete(record.id)} className="p-1 text-caudal-text-muted hover:text-caudal-error hover:bg-caudal-surface-alt rounded transition-colors" title="Delete">
-                                  <TrashIcon className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <div className="space-y-6">
+          {Object.entries(groupedPayrolls).map(([month, records]) => {
+            const isCollapsed = Boolean(collapsedMonths[month]);
+            const monthNet = records.reduce((sum, r) => sum + (r.amountReceived || 0), 0);
+            const monthSavings = records.reduce((sum, r) => sum + ((r.savingsFund || 0) * 2), 0);
+
+            return (
+              <div key={month} className="space-y-2">
+                {/* Collapsible Month Header Button */}
+                <button
+                  type="button"
+                  onClick={() => toggleMonth(month)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-xl transition-all group cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-1.5 h-5 bg-caudal-green rounded-full"></span>
+                    <span className="text-base font-semibold text-caudal-text group-hover:text-caudal-green transition-colors">
+                      {month}
+                    </span>
+                    <span className="text-xs text-caudal-text-dim px-2 py-0.5 rounded bg-caudal-surface-alt border border-caudal-border/40">
+                      {records.length} {records.length === 1 ? 'record' : 'records'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="hidden sm:flex items-center gap-3 text-xs">
+                      <span className="text-caudal-text-muted">
+                        Net: <strong className="text-caudal-green font-semibold">{formatMoney(monthNet)}</strong>
+                      </span>
+                      <span className="text-caudal-text-dim">•</span>
+                      <span className="text-caudal-text-muted">
+                        Savings: <strong className="text-caudal-green font-semibold">{formatMoney(monthSavings)}</strong>
+                      </span>
+                    </div>
+                    <span className={`text-caudal-text-muted group-hover:text-caudal-text transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}>
+                      <ChevronDownIcon className="w-4 h-4" />
+                    </span>
+                  </div>
+                </button>
+
+                {/* Standardized Table: rendered when expanded */}
+                {!isCollapsed && (
+                  <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto animate-fade-in">
+                    <table className="table-fixed w-full text-sm text-left whitespace-nowrap min-w-[750px]">
+                      <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
+                        <tr>
+                          <th className="w-[14%] px-4 py-3 font-medium">Date</th>
+                          <th className="w-[8%] px-4 py-3 text-right font-medium">Week</th>
+                          <th className="w-[15%] px-4 py-3 text-right font-medium">Amount</th>
+                          <th className="w-[12%] px-4 py-3 text-right font-medium">ISR</th>
+                          <th className="w-[12%] px-4 py-3 text-right font-medium">Savings</th>
+                          <th className="w-[12%] px-4 py-3 text-right font-medium">Match (1:1)</th>
+                          <th className="w-[17%] px-4 py-3 font-medium">Notes</th>
+                          <th className="w-[10%] px-4 py-3 text-center font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-caudal-border text-caudal-text">
+                        {records.map(record => (
+                          <tr key={record.id} className="hover:bg-caudal-surface-alt/50 transition-colors">
+                            {editingId === record.id ? (
+                              <>
+                                <td className="px-4 py-3">
+                                  <input type="date" name="date" value={editFormData.date} onChange={handleEditInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <input type="number" min="1" max="5" name="week" value={editFormData.week} onChange={handleEditInputChange} className="w-full text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <input type="number" step="0.01" name="amountReceived" value={editFormData.amountReceived} onChange={handleEditInputChange} className="w-full text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <input type="number" step="0.01" name="isr" value={editFormData.isr} onChange={handleEditInputChange} className="w-full text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <input type="number" step="0.01" name="savingsFund" value={editFormData.savingsFund} onChange={handleEditInputChange} className="w-full text-right bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                                </td>
+                                <td className="px-4 py-3 text-right text-caudal-green font-medium">
+                                  +{formatMoney(Number(editFormData.savingsFund || 0))}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input type="text" name="notes" value={editFormData.notes} onChange={handleEditInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded px-2 py-1 text-sm focus:outline-none focus:border-caudal-green" />
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button onClick={() => handleUpdate(record.id)} className="p-1 text-caudal-green hover:bg-caudal-surface-alt rounded transition-colors" title="Save">
+                                      <CheckIcon className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={handleCancelEdit} className="p-1 text-caudal-text-muted hover:bg-caudal-surface-alt rounded transition-colors" title="Cancel">
+                                      <XMarkIcon className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-4 py-3">{formatDate(record.date)}</td>
+                                <td className="px-4 py-3 text-right text-caudal-text-muted">{record.week}</td>
+                                <td className="px-4 py-3 text-right font-medium text-caudal-green">{formatMoney(record.amountReceived)}</td>
+                                <td className="px-4 py-3 text-right font-medium text-caudal-orange">{formatMoney(record.isr)}</td>
+                                <td className="px-4 py-3 text-right text-caudal-green">{formatMoney(record.savingsFund)}</td>
+                                <td className="px-4 py-3 text-right text-caudal-green">+{formatMoney(record.employerMatch || record.savingsFund || 0)}</td>
+                                <td className="px-4 py-3 text-caudal-text-muted truncate" title={record.notes || ''}>{record.notes || '-'}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button onClick={() => handleEdit(record)} className="p-1 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt rounded transition-colors" title="Edit">
+                                      <PencilIcon className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => handleDelete(record.id)} className="p-1 text-caudal-text-muted hover:text-caudal-error hover:bg-caudal-surface-alt rounded transition-colors" title="Delete">
+                                      <TrashIcon className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
