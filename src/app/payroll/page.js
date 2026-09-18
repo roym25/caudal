@@ -22,7 +22,7 @@ export default function PayrollPage() {
   const [showForm, setShowForm] = useState(false);
   const [toast, setToast] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [collapsedMonths, setCollapsedMonths] = useState({});
+  const [expandedMonths, setExpandedMonths] = useState(new Set());
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -37,6 +37,14 @@ export default function PayrollPage() {
 
   useEffect(() => {
     fetchPayrolls();
+    try {
+      const saved = localStorage.getItem('caudal_payroll_expanded_months');
+      if (saved) {
+        setExpandedMonths(new Set(JSON.parse(saved)));
+      }
+    } catch (e) {
+      console.error('Error loading expanded months from localStorage', e);
+    }
   }, []);
 
   const fetchPayrolls = async () => {
@@ -176,20 +184,28 @@ export default function PayrollPage() {
   }, {});
 
   const toggleMonth = (month) => {
-    setCollapsedMonths((prev) => ({
-      ...prev,
-      [month]: !prev[month],
-    }));
+    setExpandedMonths((prev) => {
+      const next = new Set(prev);
+      if (next.has(month)) {
+        next.delete(month);
+      } else {
+        next.add(month);
+      }
+      try {
+        localStorage.setItem('caudal_payroll_expanded_months', JSON.stringify([...next]));
+      } catch (e) {}
+      return next;
+    });
   };
 
   const toggleAllMonths = () => {
     const months = Object.keys(groupedPayrolls);
-    const allCollapsed = months.length > 0 && months.every((m) => collapsedMonths[m]);
-    const nextState = {};
-    months.forEach((m) => {
-      nextState[m] = !allCollapsed;
-    });
-    setCollapsedMonths(nextState);
+    const allExpanded = months.length > 0 && months.every((m) => expandedMonths.has(m));
+    const next = allExpanded ? new Set() : new Set(months);
+    setExpandedMonths(next);
+    try {
+      localStorage.setItem('caudal_payroll_expanded_months', JSON.stringify([...next]));
+    } catch (e) {}
   };
 
   return (
@@ -207,15 +223,15 @@ export default function PayrollPage() {
               className="flex items-center gap-1.5 px-3 py-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border text-caudal-text-muted hover:text-caudal-text text-xs font-semibold rounded-lg transition-colors cursor-pointer"
               title="Toggle expand/collapse all months"
             >
-              {Object.keys(groupedPayrolls).length > 0 && Object.keys(groupedPayrolls).every((m) => collapsedMonths[m]) ? (
-                <>
-                  <ChevronDownIcon className="w-3.5 h-3.5 text-caudal-green" />
-                  <span>Expand All</span>
-                </>
-              ) : (
+              {Object.keys(groupedPayrolls).length > 0 && Object.keys(groupedPayrolls).every((m) => expandedMonths.has(m)) ? (
                 <>
                   <ChevronUpIcon className="w-3.5 h-3.5 text-caudal-green" />
                   <span>Collapse All</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDownIcon className="w-3.5 h-3.5 text-caudal-green" />
+                  <span>Expand All</span>
                 </>
               )}
             </button>
@@ -288,7 +304,7 @@ export default function PayrollPage() {
       ) : (
         <div className="space-y-6">
           {Object.entries(groupedPayrolls).map(([month, records]) => {
-            const isCollapsed = Boolean(collapsedMonths[month]);
+            const isExpanded = expandedMonths.has(month);
             const monthNet = records.reduce((sum, r) => sum + (r.amountReceived || 0), 0);
             const monthSavings = records.reduce((sum, r) => sum + ((r.savingsFund || 0) * 2), 0);
 
@@ -320,14 +336,14 @@ export default function PayrollPage() {
                         Savings: <strong className="text-caudal-green font-semibold">{formatMoney(monthSavings)}</strong>
                       </span>
                     </div>
-                    <span className={`text-caudal-text-muted group-hover:text-caudal-text transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}>
+                    <span className={`text-caudal-text-muted group-hover:text-caudal-text transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
                       <ChevronDownIcon className="w-4 h-4" />
                     </span>
                   </div>
                 </button>
 
                 {/* Standardized Table: rendered when expanded */}
-                {!isCollapsed && (
+                {isExpanded && (
                   <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto animate-fade-in">
                     <table className="table-fixed w-full text-sm text-left whitespace-nowrap min-w-[750px]">
                       <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">

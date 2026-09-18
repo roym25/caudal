@@ -62,6 +62,18 @@ export default function VariableExpensesPage() {
 
   useEffect(() => {
     fetchVariableExpenses();
+    try {
+      const savedHideAll = localStorage.getItem('caudal_hide_all_variable_expenses');
+      if (savedHideAll !== null) {
+        setHideAllAmounts(JSON.parse(savedHideAll));
+      }
+      const savedHidden = localStorage.getItem('caudal_hidden_variable_expenses');
+      if (savedHidden) {
+        setHiddenIds(new Set(JSON.parse(savedHidden)));
+      }
+    } catch (e) {
+      console.error('Failed to load privacy state from localStorage', e);
+    }
   }, []);
 
   const handleSubmit = async (e) => {
@@ -167,8 +179,14 @@ export default function VariableExpensesPage() {
   const toggleHideRow = (id) => {
     setHiddenIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      try {
+        localStorage.setItem('caudal_hidden_variable_expenses', JSON.stringify([...next]));
+      } catch (e) {}
       return next;
     });
   };
@@ -177,9 +195,18 @@ export default function VariableExpensesPage() {
     if (hideAllAmounts) {
       setHideAllAmounts(false);
       setHiddenIds(new Set());
+      try {
+        localStorage.setItem('caudal_hide_all_variable_expenses', 'false');
+        localStorage.setItem('caudal_hidden_variable_expenses', JSON.stringify([]));
+      } catch (e) {}
     } else {
       setHideAllAmounts(true);
-      setHiddenIds(new Set(variableExpenses.map((e) => e.id)));
+      const allIds = variableExpenses.map((e) => e.id);
+      setHiddenIds(new Set(allIds));
+      try {
+        localStorage.setItem('caudal_hide_all_variable_expenses', 'true');
+        localStorage.setItem('caudal_hidden_variable_expenses', JSON.stringify(allIds));
+      } catch (e) {}
     }
   };
 
