@@ -446,9 +446,7 @@ export default function FixedExpensesPage() {
                           onContextMenu={(e) => handleMonthContextMenu(e, expense, monthIndex)}
                           className={`relative w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center mx-auto ${
                             isPaid
-                              ? hasCustomAmount
-                                ? 'bg-caudal-green text-black hover:bg-opacity-80 scale-105 ring-2 ring-caudal-orange'
-                                : 'bg-caudal-green text-black hover:bg-opacity-80 scale-105'
+                              ? 'bg-caudal-green text-black hover:bg-opacity-80 scale-105'
                               : 'bg-caudal-surface-alt border border-caudal-border text-caudal-text-dim hover:border-caudal-text-muted hover:text-caudal-text'
                           }`}
                           title={
