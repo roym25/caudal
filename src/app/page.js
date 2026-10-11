@@ -167,21 +167,21 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto w-full space-y-6">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-4 sm:space-y-6">
       {/* Header with improved clean month selector */}
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-caudal-text">Dashboard</h1>
-          <p className="text-sm text-caudal-text-muted mt-0.5">{selectedOptionLabel}</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-caudal-text">Dashboard</h1>
+          <p className="text-xs sm:text-sm text-caudal-text-muted mt-0.5">{selectedOptionLabel}</p>
         </div>
 
         {/* Clean dropdown selector */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {!isAll && (
             <div className="flex items-center gap-1">
               <button
                 onClick={handlePrevMonth}
-                className="p-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-caudal-text-muted hover:text-caudal-text transition-colors"
+                className="p-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-caudal-text-muted hover:text-caudal-text transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                 title="Previous month"
                 aria-label="Previous month"
               >
@@ -189,7 +189,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={handleNextMonth}
-                className="p-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-caudal-text-muted hover:text-caudal-text transition-colors"
+                className="p-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-caudal-text-muted hover:text-caudal-text transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                 title="Next month"
                 aria-label="Next month"
               >
@@ -201,7 +201,7 @@ export default function DashboardPage() {
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-3.5 py-2 bg-caudal-surface border border-caudal-border rounded-lg text-sm font-medium text-caudal-text focus:outline-none focus:border-caudal-green cursor-pointer hover:bg-caudal-surface-alt transition-colors"
+            className="flex-1 sm:flex-initial px-3.5 py-2 bg-caudal-surface border border-caudal-border rounded-lg text-xs sm:text-sm font-medium text-caudal-text focus:outline-none focus:border-caudal-green cursor-pointer hover:bg-caudal-surface-alt transition-colors min-h-[36px]"
           >
             {monthOptions.map((opt) => (
               <option key={opt.value} value={opt.value} className="bg-caudal-surface text-caudal-text">
@@ -213,75 +213,83 @@ export default function DashboardPage() {
           {!isAll && (
             <button
               onClick={() => setSelectedMonth('all')}
-              className="px-3 py-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-xs font-semibold text-caudal-text-muted hover:text-caudal-text transition-colors"
+              className="px-3 py-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-xs font-semibold text-caudal-text-muted hover:text-caudal-text transition-colors min-h-[36px]"
             >
-              Reset to All
+              Reset
             </button>
           )}
         </div>
       </header>
 
-      {/* 4 Core Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 4 Core Metric Cards (2x2 on mobile, 4 in row on desktop) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Income */}
-        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-5 hover:border-caudal-green/30 transition-colors">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-caudal-green/10 flex items-center justify-center text-caudal-green">
-              <BanknoteIcon className="w-5 h-5" />
+        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-3.5 sm:p-5 hover:border-caudal-green/30 transition-colors flex flex-col justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-caudal-green/10 flex items-center justify-center text-caudal-green shrink-0">
+              <BanknoteIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <h3 className="text-sm font-medium text-caudal-text-muted">Total Income</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-caudal-text-muted truncate">Total Income</h3>
           </div>
-          <div className="text-2xl font-bold text-caudal-green">{formatMoney(totalIncome)}</div>
-          <p className="text-xs text-caudal-text-dim mt-1.5">Payroll received</p>
+          <div>
+            <div className="text-lg sm:text-2xl font-bold text-caudal-green truncate">{formatMoney(totalIncome)}</div>
+            <p className="text-[10px] sm:text-xs text-caudal-text-dim mt-0.5 sm:mt-1.5 truncate">Payroll received</p>
+          </div>
         </div>
 
         {/* Total Expenses */}
-        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-5 hover:border-caudal-orange/30 transition-colors">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-caudal-orange/10 flex items-center justify-center text-caudal-orange">
-              <ReceiptIcon className="w-5 h-5" />
+        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-3.5 sm:p-5 hover:border-caudal-orange/30 transition-colors flex flex-col justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-caudal-orange/10 flex items-center justify-center text-caudal-orange shrink-0">
+              <ReceiptIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <h3 className="text-sm font-medium text-caudal-text-muted">Total Expenses</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-caudal-text-muted truncate">Total Expenses</h3>
           </div>
-          <div className="text-2xl font-bold text-caudal-orange">{formatMoney(totalExpenses)}</div>
-          <p className="text-xs text-caudal-text-dim mt-1.5">
-            Fixed: {formatMoney(totalFixedExpenses)} | Var: {formatMoney(totalVariableExpenses)}
-          </p>
+          <div>
+            <div className="text-lg sm:text-2xl font-bold text-caudal-orange truncate">{formatMoney(totalExpenses)}</div>
+            <p className="text-[10px] sm:text-xs text-caudal-text-dim mt-0.5 sm:mt-1.5 truncate">
+              Fixed: {formatMoney(totalFixedExpenses)} | Var: {formatMoney(totalVariableExpenses)}
+            </p>
+          </div>
         </div>
 
         {/* Remaining Balance */}
-        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-5 transition-colors">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-caudal-surface-alt flex items-center justify-center text-caudal-text">
-              <WalletIcon className="w-5 h-5" />
+        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-3.5 sm:p-5 transition-colors flex flex-col justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-caudal-surface-alt flex items-center justify-center text-caudal-text shrink-0">
+              <WalletIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <h3 className="text-sm font-medium text-caudal-text-muted">Remaining Balance</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-caudal-text-muted truncate">Remaining</h3>
           </div>
-          <div className={`text-2xl font-bold ${remainingBalance >= 0 ? 'text-caudal-text' : 'text-caudal-error'}`}>
-            {formatMoney(remainingBalance)}
+          <div>
+            <div className={`text-lg sm:text-2xl font-bold truncate ${remainingBalance >= 0 ? 'text-caudal-text' : 'text-caudal-error'}`}>
+              {formatMoney(remainingBalance)}
+            </div>
+            <p className="text-[10px] sm:text-xs text-caudal-text-dim mt-0.5 sm:mt-1.5 truncate">Income minus expenses</p>
           </div>
-          <p className="text-xs text-caudal-text-dim mt-1.5">Income minus expenses</p>
         </div>
 
         {/* Savings Fund */}
-        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-5 hover:border-caudal-green/30 transition-colors">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-caudal-green/10 flex items-center justify-center text-caudal-green">
-              <PiggyBankIcon className="w-5 h-5" />
+        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-3.5 sm:p-5 hover:border-caudal-green/30 transition-colors flex flex-col justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-caudal-green/10 flex items-center justify-center text-caudal-green shrink-0">
+              <PiggyBankIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <h3 className="text-sm font-medium text-caudal-text-muted">Savings Fund</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-caudal-text-muted truncate">Savings Fund</h3>
           </div>
-          <div className="text-2xl font-bold text-caudal-green">{formatMoney(totalSavings)}</div>
-          <p className="text-xs text-caudal-text-dim mt-1.5">
-            You: {formatMoney(employeeSavings)} | Match: {formatMoney(employerSavings)}
-          </p>
+          <div>
+            <div className="text-lg sm:text-2xl font-bold text-caudal-green truncate">{formatMoney(totalSavings)}</div>
+            <p className="text-[10px] sm:text-xs text-caudal-text-dim mt-0.5 sm:mt-1.5 truncate">
+              You: {formatMoney(employeeSavings)} | Match: {formatMoney(employerSavings)}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Clear Visual Breakdown & Savings Fund Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Clear Expense Breakdown Card (No confusing donut) */}
-        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-6 flex flex-col justify-between">
+        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-4 sm:p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>

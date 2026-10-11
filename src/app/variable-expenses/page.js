@@ -222,15 +222,15 @@ export default function VariableExpensesPage() {
   });
 
   return (
-    <div className="p-6 max-w-6xl mx-auto w-full space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3.5 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-caudal-text">Variable Expenses</h1>
-          <p className="text-sm text-caudal-text-muted mt-0.5">One-off purchases, dining, and daily spending</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-caudal-text">Variable Expenses</h1>
+          <p className="text-xs sm:text-sm text-caudal-text-muted mt-0.5">One-off purchases, dining, and daily spending</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-caudal-orange text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-caudal-orange text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors w-full sm:w-auto min-h-[38px]"
         >
           <PlusIcon className="w-4 h-4" />
           New Variable Expense
@@ -265,6 +265,7 @@ export default function VariableExpensesPage() {
             <input
               type="number"
               step="0.01"
+              inputMode="decimal"
               placeholder="0.00"
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
@@ -301,7 +302,7 @@ export default function VariableExpensesPage() {
           action="Click '+ New Variable Expense' to record daily purchases or one-off expenses."
         />
       ) : (
-        <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto">
+        <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto touch-scroll">
           <table className="table-fixed w-full text-sm text-left whitespace-nowrap min-w-[750px]">
             <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
               <tr>

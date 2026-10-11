@@ -209,18 +209,18 @@ export default function PayrollPage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto w-full space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3.5 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-caudal-text">Payroll</h1>
-          <p className="text-sm text-caudal-text-muted mt-0.5">Weekly income and deductions</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-caudal-text">Payroll</h1>
+          <p className="text-xs sm:text-sm text-caudal-text-muted mt-0.5">Weekly income and deductions</p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           {payrolls.length > 0 && (
             <button
               type="button"
               onClick={toggleAllMonths}
-              className="flex items-center gap-1.5 px-3 py-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border text-caudal-text-muted hover:text-caudal-text text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border text-caudal-text-muted hover:text-caudal-text text-xs font-semibold rounded-lg transition-colors cursor-pointer min-h-[38px]"
               title="Toggle expand/collapse all months"
             >
               {Object.keys(groupedPayrolls).length > 0 && Object.keys(groupedPayrolls).every((m) => expandedMonths.has(m)) ? (
@@ -238,7 +238,7 @@ export default function PayrollPage() {
           )}
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-caudal-green text-black font-semibold rounded-lg hover:bg-opacity-90 transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-caudal-green text-black font-semibold rounded-lg hover:bg-opacity-90 transition-colors cursor-pointer min-h-[38px]"
           >
             <PlusIcon className="w-4 h-4" />
             New Payroll
@@ -254,15 +254,15 @@ export default function PayrollPage() {
           </div>
           <div>
             <label className="block text-sm text-caudal-text-muted mb-1">Week (1–5)</label>
-            <input required type="number" min="1" max="5" name="week" placeholder="1" value={formData.week} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+            <input required type="number" min="1" max="5" inputMode="numeric" name="week" placeholder="1" value={formData.week} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
           </div>
           <div>
             <label className="block text-sm text-caudal-text-muted mb-1">Amount Received (Net Pay)</label>
-            <input required type="number" step="0.01" name="amountReceived" placeholder="0.00" value={formData.amountReceived} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+            <input required type="number" step="0.01" inputMode="decimal" name="amountReceived" placeholder="0.00" value={formData.amountReceived} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
           </div>
           <div>
             <label className="block text-sm text-caudal-text-muted mb-1">ISR</label>
-            <input required type="number" step="0.01" name="isr" placeholder="0.00" value={formData.isr} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
+            <input required type="number" step="0.01" inputMode="decimal" name="isr" placeholder="0.00" value={formData.isr} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
           </div>
           <div>
             <div className="flex justify-between items-baseline mb-1">
@@ -272,6 +272,7 @@ export default function PayrollPage() {
             <input
               type="number"
               step="0.01"
+              inputMode="decimal"
               name="savingsFund"
               placeholder="0.00"
               value={formData.savingsFund}
@@ -302,7 +303,7 @@ export default function PayrollPage() {
       ) : payrolls.length === 0 ? (
         <EmptyState message="No payroll records registered yet" action="Click '+ New Payroll' to add your first payment." />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {Object.entries(groupedPayrolls).map(([month, records]) => {
             const isExpanded = expandedMonths.has(month);
             const monthNet = records.reduce((sum, r) => sum + (r.amountReceived || 0), 0);
@@ -314,19 +315,22 @@ export default function PayrollPage() {
                 <button
                   type="button"
                   onClick={() => toggleMonth(month)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-xl transition-all group cursor-pointer text-left"
+                  className="w-full flex items-center justify-between px-3.5 sm:px-4 py-3 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-xl transition-all group cursor-pointer text-left"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
                     <span className="w-1.5 h-5 bg-caudal-green rounded-full"></span>
-                    <span className="text-base font-semibold text-caudal-text group-hover:text-caudal-green transition-colors">
+                    <span className="text-sm sm:text-base font-semibold text-caudal-text group-hover:text-caudal-green transition-colors">
                       {month}
                     </span>
-                    <span className="text-xs text-caudal-text-dim px-2 py-0.5 rounded bg-caudal-surface-alt border border-caudal-border/40">
-                      {records.length} {records.length === 1 ? 'record' : 'records'}
+                    <span className="text-[11px] sm:text-xs text-caudal-text-dim px-2 py-0.5 rounded bg-caudal-surface-alt border border-caudal-border/40">
+                      {records.length} {records.length === 1 ? 'rec' : 'recs'}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <span className="text-xs font-bold text-caudal-green sm:hidden">
+                      {formatMoney(monthNet)}
+                    </span>
                     <div className="hidden sm:flex items-center gap-3 text-xs">
                       <span className="text-caudal-text-muted">
                         Net: <strong className="text-caudal-green font-semibold">{formatMoney(monthNet)}</strong>
@@ -344,7 +348,7 @@ export default function PayrollPage() {
 
                 {/* Standardized Table: rendered when expanded */}
                 {isExpanded && (
-                  <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto animate-fade-in">
+                  <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto touch-scroll animate-fade-in">
                     <table className="table-fixed w-full text-sm text-left whitespace-nowrap min-w-[750px]">
                       <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
                         <tr>

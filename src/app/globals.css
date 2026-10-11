@@ -70,6 +70,7 @@ body {
   color: var(--caudal-text);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Form Controls */
@@ -77,6 +78,27 @@ input, select, textarea {
   color: var(--caudal-text);
   background-color: var(--caudal-surface);
   border-color: var(--caudal-border);
+}
+
+/* Prevent iOS Safari / Chrome auto-zoom on input focus (requires font-size >= 16px) */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Touch-friendly scrolling for tables and containers */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Safe area insets helpers */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+.safe-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
 }
 
 input::placeholder, textarea::placeholder {
