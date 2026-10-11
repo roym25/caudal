@@ -86,8 +86,9 @@ export default function DashboardPage() {
   if (Array.isArray(fixedExpensesData)) {
     if (isAll) {
       totalFixedExpenses = fixedExpensesData.reduce((acc, e) => {
-        const paidCount = e.payments?.filter(p => p.paid).length || 0;
-        return acc + (paidCount * (e.cost || 0));
+        const paidPayments = e.payments?.filter(p => p.paid) || [];
+        const sumPaid = paidPayments.reduce((s, p) => s + (p.amount !== null && p.amount !== undefined ? p.amount : (e.cost || 0)), 0);
+        return acc + sumPaid;
       }, 0);
     } else {
       const [year, month] = selectedMonth.split('-').map(Number);
@@ -96,7 +97,10 @@ export default function DashboardPage() {
           const d = new Date(p.date);
           return d.getUTCFullYear() === year && (d.getUTCMonth() + 1) === month;
         });
-        return acc + (payment?.paid ? (e.cost || 0) : 0);
+        if (payment?.paid) {
+          return acc + (payment.amount !== null && payment.amount !== undefined ? payment.amount : (e.cost || 0));
+        }
+        return acc;
       }, 0);
     }
   }

@@ -151,6 +151,14 @@ export function validateFixedPayment(body) {
     errors.push('paid must be a boolean')
   }
 
+  let amount = null
+  if (body.amount !== undefined && body.amount !== null && body.amount !== '') {
+    amount = parseFloat(body.amount)
+    if (isNaN(amount) || amount < 0) {
+      errors.push('amount must be a non-negative number')
+    }
+  }
+
   const date = parseDate(body.date)
   if (!date) {
     errors.push('date is not a valid date')
@@ -164,6 +172,7 @@ export function validateFixedPayment(body) {
       fixedExpenseId,
       date,
       paid: body.paid,
+      amount,
     },
   }
 }

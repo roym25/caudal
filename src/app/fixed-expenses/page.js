@@ -27,6 +27,7 @@ export default function FixedExpensesPage() {
   const [form, setForm] = useState({ name: '', cost: '', dueDay: '' });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', cost: '', dueDay: '' });
+  const [paymentModal, setPaymentModal] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -135,18 +136,22 @@ export default function FixedExpensesPage() {
     }
   };
 
-  const togglePayment = async (expenseId, monthIndex, isPaid) => {
+  const togglePayment = async (expenseId, monthIndex, isPaid, optionalAmount) => {
     const monthNum = String(monthIndex + 1).padStart(2, '0');
     const dateStr = `${currentYear}-${monthNum}-01T12:00:00Z`;
     try {
+      const payload = {
+        fixedExpenseId: expenseId,
+        date: dateStr,
+        paid: !isPaid,
+      };
+      if (optionalAmount !== undefined && optionalAmount !== null) {
+        payload.amount = optionalAmount;
+      }
       const res = await fetch('/api/fixed-payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fixedExpenseId: expenseId,
-          date: dateStr,
-          paid: !isPaid,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         showToast('Failed to update payment status', 'error');
@@ -168,11 +173,109 @@ export default function FixedExpensesPage() {
   };
 
   const getTotalPaid = (expense) => {
-    const paidCount = MONTHS.filter((_, monthIndex) => {
+    return MONTHS.reduce((sum, _, monthIndex) => {
       const payment = getPaymentForMonth(expense.payments, monthIndex);
-      return payment?.paid ?? false;
-    }).length;
-    return paidCount * (expense.cost || 0);
+      if (payment?.paid) {
+        const amount = payment.amount !== null && payment.amount !== undefined ? payment.amount : (expense.cost || 0);
+        return sum + amount;
+      }
+      return sum;
+    }, 0);
+  };
+
+  const handleMonthClick = (expense, monthIndex) => {
+    const payment = getPaymentForMonth(expense.payments, monthIndex);
+    const isPaid = payment?.paid ?? false;
+    if (!isPaid) {
+      togglePayment(expense.id, monthIndex, false, expense.cost);
+    } else {
+      const paidAmount = payment.amount !== null && payment.amount !== undefined ? payment.amount : expense.cost;
+      setPaymentModal({
+        expenseId: expense.id,
+        expenseName: expense.name,
+        monthIndex,
+        monthName: MONTHS[monthIndex],
+        amount: String(paidAmount),
+        defaultCost: expense.cost,
+        isPaid: true,
+      });
+    }
+  };
+
+  const handleMonthContextMenu = (e, expense, monthIndex) => {
+    e.preventDefault();
+    const payment = getPaymentForMonth(expense.payments, monthIndex);
+    const isPaid = payment?.paid ?? false;
+    const paidAmount = payment?.amount !== null && payment?.amount !== undefined ? payment.amount : expense.cost;
+    setPaymentModal({
+      expenseId: expense.id,
+      expenseName: expense.name,
+      monthIndex,
+      monthName: MONTHS[monthIndex],
+      amount: String(paidAmount),
+      defaultCost: expense.cost,
+      isPaid,
+    });
+  };
+
+  const handleSavePaymentAmount = async () => {
+    if (!paymentModal) return;
+    const parsed = parseFloat(paymentModal.amount);
+    if (isNaN(parsed) || parsed < 0) {
+      showToast('Please enter a valid amount', 'error');
+      return;
+    }
+    const monthNum = String(paymentModal.monthIndex + 1).padStart(2, '0');
+    const dateStr = `${currentYear}-${monthNum}-01T12:00:00Z`;
+    try {
+      const res = await fetch('/api/fixed-payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fixedExpenseId: paymentModal.expenseId,
+          date: dateStr,
+          paid: true,
+          amount: parsed,
+        }),
+      });
+      if (!res.ok) {
+        showToast('Failed to update payment amount', 'error');
+        return;
+      }
+      showToast(`Updated ${paymentModal.monthName} payment: ${formatMoney(parsed)}`);
+      setPaymentModal(null);
+      fetchFixedExpenses();
+    } catch (err) {
+      console.error('Error updating payment amount:', err);
+      showToast('Network error updating payment', 'error');
+    }
+  };
+
+  const handleUnmarkPayment = async () => {
+    if (!paymentModal) return;
+    const monthNum = String(paymentModal.monthIndex + 1).padStart(2, '0');
+    const dateStr = `${currentYear}-${monthNum}-01T12:00:00Z`;
+    try {
+      const res = await fetch('/api/fixed-payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fixedExpenseId: paymentModal.expenseId,
+          date: dateStr,
+          paid: false,
+        }),
+      });
+      if (!res.ok) {
+        showToast('Failed to unmark payment', 'error');
+        return;
+      }
+      showToast(`Marked ${paymentModal.monthName} as unpaid`);
+      setPaymentModal(null);
+      fetchFixedExpenses();
+    } catch (err) {
+      console.error('Error unmarking payment:', err);
+      showToast('Network error unmarking payment', 'error');
+    }
   };
 
   const annualTotal = fixedExpenses.reduce((acc, expense) => acc + getTotalPaid(expense), 0);
@@ -333,19 +436,40 @@ export default function FixedExpensesPage() {
                   {MONTHS.map((month, monthIndex) => {
                     const payment = getPaymentForMonth(expense.payments, monthIndex);
                     const isPaid = payment?.paid ?? false;
+                    const paidAmount = payment?.amount !== null && payment?.amount !== undefined ? payment.amount : expense.cost;
+                    const hasCustomAmount = isPaid && payment?.amount !== null && payment?.amount !== undefined && payment.amount !== expense.cost;
+
                     return (
-                      <td key={month} className="px-2 py-3 text-center">
+                      <td key={month} className="px-1.5 py-2.5 text-center">
                         <button
-                          onClick={() => togglePayment(expense.id, monthIndex, isPaid)}
-                          className={`w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center mx-auto ${
+                          onClick={() => handleMonthClick(expense, monthIndex)}
+                          onContextMenu={(e) => handleMonthContextMenu(e, expense, monthIndex)}
+                          className={`relative w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center mx-auto ${
                             isPaid
-                              ? 'bg-caudal-green text-black hover:bg-opacity-80 scale-105'
-                              : 'bg-caudal-surface-alt border border-caudal-border text-caudal-text-dim hover:border-caudal-text-muted'
+                              ? hasCustomAmount
+                                ? 'bg-caudal-green text-black hover:bg-opacity-80 scale-105 ring-2 ring-caudal-orange'
+                                : 'bg-caudal-green text-black hover:bg-opacity-80 scale-105'
+                              : 'bg-caudal-surface-alt border border-caudal-border text-caudal-text-dim hover:border-caudal-text-muted hover:text-caudal-text'
                           }`}
-                          title={isPaid ? 'Mark as unpaid' : 'Mark as paid'}
+                          title={
+                            isPaid
+                              ? `${month} ${currentYear}: Paid ${formatMoney(paidAmount)}${hasCustomAmount ? ` (Base cost: ${formatMoney(expense.cost)})` : ''}\nClick to edit amount or mark unpaid`
+                              : `${month} ${currentYear}: Unpaid (Cost: ${formatMoney(expense.cost)})\nClick to mark paid (Right-click to set custom amount)`
+                          }
                         >
                           {isPaid ? <CheckIcon className="w-3.5 h-3.5" /> : null}
+                          {hasCustomAmount && (
+                            <span
+                              className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-caudal-orange border border-caudal-surface"
+                              title={`Custom amount: ${formatMoney(paidAmount)}`}
+                            />
+                          )}
                         </button>
+                        {isPaid && (
+                          <span className={`text-[10px] block mt-0.5 leading-none font-mono ${hasCustomAmount ? 'text-caudal-orange font-semibold' : 'text-caudal-text-dim'}`}>
+                            ${Math.round(paidAmount)}
+                          </span>
+                        )}
                       </td>
                     );
                   })}
@@ -404,6 +528,82 @@ export default function FixedExpensesPage() {
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {paymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-caudal-surface border border-caudal-border rounded-xl w-full max-w-sm p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-caudal-text">{paymentModal.expenseName}</h3>
+                <p className="text-xs text-caudal-text-muted">{paymentModal.monthName} {currentYear} Payment</p>
+              </div>
+              <button
+                onClick={() => setPaymentModal(null)}
+                className="p-1 text-caudal-text-muted hover:text-caudal-text rounded-lg hover:bg-caudal-surface-alt transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-caudal-text-muted mb-1">
+                Amount Paid (MXN)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-caudal-text-dim text-sm">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={paymentModal.amount}
+                  onChange={(e) => setPaymentModal({ ...paymentModal, amount: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSavePaymentAmount();
+                    if (e.key === 'Escape') setPaymentModal(null);
+                  }}
+                  autoFocus
+                  className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg pl-7 pr-3 py-2 text-caudal-text font-semibold focus:outline-none focus:border-caudal-green transition-colors"
+                />
+              </div>
+              <div className="text-[11px] text-caudal-text-dim mt-1.5 flex items-center justify-between">
+                <span>Base cost: {formatMoney(paymentModal.defaultCost)}</span>
+                {paymentModal.amount && parseFloat(paymentModal.amount) !== paymentModal.defaultCost && (
+                  <span className="text-caudal-orange font-medium">Custom amount</span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-caudal-border">
+              {paymentModal.isPaid ? (
+                <button
+                  type="button"
+                  onClick={handleUnmarkPayment}
+                  className="text-xs text-caudal-error hover:underline transition-colors font-medium"
+                >
+                  Mark as Unpaid
+                </button>
+              ) : (
+                <span />
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentModal(null)}
+                  className="px-3 py-1.5 text-xs text-caudal-text-muted hover:text-caudal-text rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePaymentAmount}
+                  className="px-3.5 py-1.5 bg-caudal-green text-black font-semibold text-xs rounded-lg hover:bg-opacity-90 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

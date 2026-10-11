@@ -10,7 +10,23 @@ export async function POST(request) {
       return badRequest(validation.errors)
     }
 
-    const { fixedExpenseId, date, paid } = validation.data
+    const { fixedExpenseId, date, paid, amount } = validation.data
+
+    let finalAmount = amount
+    if (paid && (finalAmount === null || finalAmount === undefined)) {
+      const expense = await prisma.fixedExpense.findUnique({
+        where: { id: fixedExpenseId },
+        select: { cost: true },
+      })
+      if (expense) {
+        finalAmount = expense.cost
+      }
+    }
+
+    const updateData = { paid }
+    if (finalAmount !== null && finalAmount !== undefined) {
+      updateData.amount = finalAmount
+    }
 
     const payment = await prisma.fixedPayment.upsert({
       where: {
@@ -19,11 +35,12 @@ export async function POST(request) {
           date,
         },
       },
-      update: { paid },
+      update: updateData,
       create: {
         fixedExpenseId,
         date,
         paid,
+        amount: finalAmount,
       },
     })
 

@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import prisma from '../src/lib/prisma.js'
-import { validatePayroll } from '../src/lib/validate.js'
+import { validatePayroll, validateFixedPayment } from '../src/lib/validate.js'
 
 async function runTests() {
   console.log('🧪 Running Caudal Database & Model Integration Tests...\n')
@@ -96,9 +96,9 @@ async function runTests() {
     failed++
   }
 
-  // Test 3: FixedExpense & FixedPayment CRUD
+  // Test 3: FixedExpense & FixedPayment CRUD with amount
   try {
-    console.log('\n3. Testing FixedExpense & Payment CRUD...')
+    console.log('\n3. Testing FixedExpense & Payment CRUD with amount...')
     const createdExpense = await prisma.fixedExpense.create({
       data: {
         name: 'Test Netflix',
@@ -115,14 +115,33 @@ async function runTests() {
           date: new Date('2026-05-01T12:00:00.000Z'),
         },
       },
-      update: { paid: true },
+      update: { paid: true, amount: 239.0 },
       create: {
         fixedExpenseId: createdExpense.id,
         date: new Date('2026-05-01T12:00:00.000Z'),
         paid: true,
+        amount: 239.0,
       },
     })
-    console.log('   ✓ Upserted FixedPayment status:', payment.paid)
+    console.log('   ✓ Upserted FixedPayment status:', payment.paid, 'with amount:', payment.amount)
+    if (payment.amount !== 239.0) throw new Error(`Expected payment amount 239.0, got ${payment.amount}`)
+
+    const updatedPayment = await prisma.fixedPayment.update({
+      where: { id: payment.id },
+      data: { amount: 149.0 },
+    })
+    console.log('   ✓ Updated FixedPayment amount to:', updatedPayment.amount)
+    if (updatedPayment.amount !== 149.0) throw new Error(`Expected payment amount 149.0, got ${updatedPayment.amount}`)
+
+    const valResult = validateFixedPayment({
+      fixedExpenseId: createdExpense.id,
+      date: '2026-08-01',
+      paid: true,
+      amount: '149.50',
+    })
+    if (!valResult.valid) throw new Error('validateFixedPayment failed: ' + valResult.errors.join(', '))
+    if (valResult.data.amount !== 149.50) throw new Error(`Expected validated amount 149.50, got ${valResult.data.amount}`)
+    console.log('   ✓ validateFixedPayment correctly parsed amount:', valResult.data.amount)
 
     await prisma.fixedPayment.deleteMany({ where: { fixedExpenseId: createdExpense.id } })
     await prisma.fixedExpense.delete({ where: { id: createdExpense.id } })
