@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [variableExpensesData, setVariableExpensesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [payingExpenseId, setPayingExpenseId] = useState(null);
+  const [isUpdatingSavingsCycle, setIsUpdatingSavingsCycle] = useState(false);
 
   // Generate list of months for selector (Current year + past year)
   const now = new Date();
@@ -177,13 +178,85 @@ export default function DashboardPage() {
     }
   };
 
-  // Savings Fund calculations (Single authoritative card with year-end projection)
-  const employeeSavings = payrollData.reduce((sum, item) => sum + (item.savingsFund || 0), 0);
-  const employerSavings = payrollData.reduce((sum, item) => sum + (item.employerMatch || item.savingsFund || 0), 0);
+  // Savings Fund calculations (Active cycle vs. Last paid-out cycle)
+  const activeSavingsPayrolls = isAll
+    ? payrollData.filter((item) => !item.savingsPaidAt)
+    : payrollData;
+
+  const employeeSavings = activeSavingsPayrolls.reduce((sum, item) => sum + (item.savingsFund || 0), 0);
+  const employerSavings = activeSavingsPayrolls.reduce((sum, item) => sum + (item.employerMatch || item.savingsFund || 0), 0);
   const totalSavings = employeeSavings + employerSavings;
-  const avgWeeklySavings = totalWeeks > 0 ? totalSavings / totalWeeks : 0;
+  const savingsWeeks = activeSavingsPayrolls.length;
+  const avgWeeklySavings = savingsWeeks > 0 ? totalSavings / savingsWeeks : 0;
   // Projected 52-week annual payout based on average weekly contribution + match
   const projectedAnnualSavings = avgWeeklySavings * 52;
+
+  // Last payout calculation (most recent closed cycle batch)
+  const paidOutPayrolls = payrollData.filter((item) => Boolean(item.savingsPaidAt));
+  const latestPaidAtMs =
+    paidOutPayrolls.length > 0
+      ? Math.max(...paidOutPayrolls.map((item) => new Date(item.savingsPaidAt).getTime()))
+      : null;
+  const lastPayoutBatch =
+    latestPaidAtMs !== null
+      ? paidOutPayrolls.filter((item) => new Date(item.savingsPaidAt).getTime() === latestPaidAtMs)
+      : [];
+  const lastPayoutTotal = lastPayoutBatch.reduce(
+    (sum, item) => sum + (item.savingsFund || 0) + (item.employerMatch || item.savingsFund || 0),
+    0
+  );
+  const lastPayoutWeeks = lastPayoutBatch.length;
+
+  const refreshPayrolls = async () => {
+    const payrollUrl = isAll ? '/api/payroll' : `/api/payroll?month=${selectedMonth}`;
+    const res = await fetch(payrollUrl);
+    const data = await res.json();
+    if (Array.isArray(data)) setPayrollData(data);
+  };
+
+  const handleCloseSavingsCycle = async () => {
+    if (isUpdatingSavingsCycle || totalSavings <= 0) return;
+    if (
+      !confirm(
+        `Mark current Savings Fund (${formatMoney(totalSavings)}) as paid out and start a new count from $0.00?`
+      )
+    ) {
+      return;
+    }
+    setIsUpdatingSavingsCycle(true);
+    try {
+      const res = await fetch('/api/payroll/savings-cycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'close' }),
+      });
+      if (res.ok) await refreshPayrolls();
+    } catch (err) {
+      console.error('Error closing savings cycle:', err);
+    } finally {
+      setIsUpdatingSavingsCycle(false);
+    }
+  };
+
+  const handleUndoSavingsCycle = async () => {
+    if (isUpdatingSavingsCycle || lastPayoutBatch.length === 0) return;
+    if (!confirm(`Restore last payout (${formatMoney(lastPayoutTotal)}) back into the active count?`)) {
+      return;
+    }
+    setIsUpdatingSavingsCycle(true);
+    try {
+      const res = await fetch('/api/payroll/savings-cycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'undo' }),
+      });
+      if (res.ok) await refreshPayrolls();
+    } catch (err) {
+      console.error('Error undoing savings cycle:', err);
+    } finally {
+      setIsUpdatingSavingsCycle(false);
+    }
+  };
 
   // Recent activity: merge payroll and variable expenses
   const activities = [
@@ -441,23 +514,36 @@ export default function DashboardPage() {
         {/* Single Authoritative Savings Fund Card (Fondo de Ahorro) */}
         <div className="bg-caudal-surface border border-caudal-border rounded-xl p-4 sm:p-6 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between gap-2 mb-3">
               <div>
                 <h2 className="text-base font-bold text-caudal-text">Savings Fund (Fondo de Ahorro)</h2>
-                <p className="text-xs text-caudal-text-muted mt-0.5">Annual company savings payout in December</p>
+                <p className="text-xs text-caudal-text-muted mt-0.5">Annual company savings payout</p>
               </div>
-              <span className="px-2.5 py-1 bg-caudal-green/10 text-caudal-green text-xs font-semibold rounded-full border border-caudal-green/20 shrink-0">
-                1:1 Match
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                {isAll && totalSavings > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleCloseSavingsCycle}
+                    disabled={isUpdatingSavingsCycle}
+                    title="Mark current savings as paid out and start a new cycle from $0"
+                    className="px-2.5 py-1 bg-caudal-surface-alt hover:bg-caudal-green/15 text-caudal-text-muted hover:text-caudal-green text-xs font-semibold rounded-full border border-caudal-border hover:border-caudal-green/30 transition-colors disabled:opacity-50"
+                  >
+                    New Cycle
+                  </button>
+                )}
+                <span className="px-2.5 py-1 bg-caudal-green/10 text-caudal-green text-xs font-semibold rounded-full border border-caudal-green/20">
+                  1:1 Match
+                </span>
+              </div>
             </div>
 
             {/* Big Total Box */}
             <div className="p-4 rounded-xl bg-caudal-surface-alt border border-caudal-border/80 mb-3.5">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-xs text-caudal-text-muted uppercase tracking-wider font-medium">
-                  Accumulated so far
+                  {isAll ? 'Current cycle accumulated' : 'Accumulated in month'}
                 </p>
-                {isAll && totalWeeks > 0 && (
+                {isAll && savingsWeeks > 0 && (
                   <span className="text-[11px] text-caudal-green font-semibold">
                     Est. 52-wk: ~{formatMoney(projectedAnnualSavings)}
                   </span>
@@ -480,11 +566,39 @@ export default function DashboardPage() {
                 <span className="text-base sm:text-lg font-bold text-caudal-green">{formatMoney(employerSavings)}</span>
               </div>
             </div>
+
+            {/* Last Payout Reference Box */}
+            {isAll && lastPayoutTotal > 0 && (
+              <div className="mt-3 p-3 rounded-lg bg-caudal-green/5 border border-caudal-green/20 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="text-xs font-semibold text-caudal-text block truncate">
+                    Last payout received
+                  </span>
+                  <span className="text-[11px] text-caudal-text-dim">
+                    Previous cycle ({lastPayoutWeeks} weekly payrolls)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <span className="text-sm sm:text-base font-extrabold text-caudal-green">
+                    {formatMoney(lastPayoutTotal)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleUndoSavingsCycle}
+                    disabled={isUpdatingSavingsCycle}
+                    title="Undo payout and restore to current count"
+                    className="text-[11px] text-caudal-text-dim hover:text-caudal-text underline transition-colors disabled:opacity-50"
+                  >
+                    Undo
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Helpful footer summary */}
           <div className="mt-4 pt-3 border-t border-caudal-border/60 flex items-center justify-between text-xs text-caudal-text-dim">
-            <span>{totalWeeks} weekly payrolls recorded</span>
+            <span>{savingsWeeks} weekly payrolls in current cycle</span>
             <span>Avg: ~{formatMoney(avgWeeklySavings)}/week saved</span>
           </div>
         </div>

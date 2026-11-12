@@ -251,6 +251,49 @@ async function runTests() {
     failed++
   }
 
+  // Test: Savings Fund cycle payout (savingsPaidAt)
+  try {
+    console.log('\nTesting Savings Fund cycle payout (savingsPaidAt)...')
+    // Ensure any pre-existing payrolls before this migration have their initial cycle stamped if none are stamped yet
+    const alreadyPaidCount = await prisma.payroll.count({ where: { NOT: { savingsPaidAt: null } } })
+    const totalExistingCount = await prisma.payroll.count()
+    if (alreadyPaidCount === 0 && totalExistingCount > 0) {
+      const initialStamp = new Date('2026-11-11T12:00:00.000Z')
+      const res = await prisma.payroll.updateMany({
+        where: { savingsPaidAt: null },
+        data: { savingsPaidAt: initialStamp },
+      })
+      console.log(`   ✓ Initialized ${res.count} existing payroll(s) as paid out in previous cycle`)
+    }
+
+    const cyclePayroll = await prisma.payroll.create({
+      data: {
+        date: new Date('2026-11-15T12:00:00.000Z'),
+        week: 2,
+        amountReceived: 5000,
+        isr: 800,
+        savingsFund: 300,
+        employerMatch: 300,
+      },
+    })
+    if (cyclePayroll.savingsPaidAt !== null) {
+      throw new Error('New payroll should default to savingsPaidAt: null (active cycle)')
+    }
+    const stamp = new Date()
+    const closedPayroll = await prisma.payroll.update({
+      where: { id: cyclePayroll.id },
+      data: { savingsPaidAt: stamp },
+    })
+    if (!closedPayroll.savingsPaidAt) {
+      throw new Error('Failed to set savingsPaidAt on payroll')
+    }
+    await prisma.payroll.delete({ where: { id: cyclePayroll.id } })
+    console.log('   ✓ Payroll savingsPaidAt lifecycle verified')
+  } catch (err) {
+    console.error('   ❌ Savings cycle test failed:', err.message)
+    failed++
+  }
+
   if (failed > 0) {
     console.error(`\n❌ ${failed} test(s) failed.`)
     process.exit(1)

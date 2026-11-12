@@ -9,15 +9,16 @@ datasource db {
 
 // Nomina
 model Payroll {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   date           DateTime
   week           Int
   amountReceived Float
   isr            Float
-  savingsFund    Float    @default(0)
-  employerMatch  Float    @default(0)
+  savingsFund    Float     @default(0)
+  employerMatch  Float     @default(0)
+  savingsPaidAt  DateTime? // Fecha de corte cuando se entregó este Fondo de Ahorro
   notes          String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 }
 
 //GastoFijo
