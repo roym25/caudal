@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DashboardIcon, BanknoteIcon, CalendarIcon, ReceiptIcon } from '@/components/icons';
+import { DashboardIcon, BanknoteIcon, CalendarIcon, ReceiptIcon, TrendUpIcon } from '@/components/icons';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -12,6 +12,7 @@ export default function Sidebar() {
     { href: '/payroll', label: 'Payroll', icon: BanknoteIcon },
     { href: '/fixed-expenses', label: 'Fixed Expenses', icon: CalendarIcon },
     { href: '/variable-expenses', label: 'Variable Expenses', icon: ReceiptIcon },
+    { href: '/investments', label: 'Investments', icon: TrendUpIcon },
   ];
 
   return (

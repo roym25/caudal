@@ -52,3 +52,22 @@ model VariableExpense {
   comments    String?
   createdAt   DateTime @default(now())
 }
+
+// Banco / SOFIPO de inversión
+model InvestmentAccount {
+  id        Int                @id @default(autoincrement())
+  name      String
+  rate      Float?             // Rendimiento anual (%) opcional, solo referencia
+  pockets   InvestmentPocket[]
+  createdAt DateTime           @default(now())
+}
+
+// Apartado dentro de un banco (Emergencia, Vacaciones, etc.)
+model InvestmentPocket {
+  id        Int               @id @default(autoincrement())
+  account   InvestmentAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId Int
+  name      String
+  amount    Float
+  createdAt DateTime          @default(now())
+}

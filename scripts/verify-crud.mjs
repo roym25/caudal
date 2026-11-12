@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import prisma from '../src/lib/prisma.js'
-import { validatePayroll, validateFixedPayment } from '../src/lib/validate.js'
+import { validatePayroll, validateFixedPayment, validateInvestmentAccount, validateInvestmentPocket } from '../src/lib/validate.js'
 
 async function runTests() {
   console.log('🧪 Running Caudal Database & Model Integration Tests...\n')
@@ -183,6 +183,53 @@ async function runTests() {
     await prisma.variableExpense.deleteMany({ where: { id: { in: [ve1.id, ve2.id] } } })
   } catch (err) {
     console.error('   ❌ Query ordering test failed:', err.message)
+    failed++
+  }
+
+  // Test: Investment accounts & pockets (CRUD, totals, cascade delete, validation)
+  try {
+    console.log('\nTesting InvestmentAccount & InvestmentPocket CRUD...')
+    const accValid = validateInvestmentAccount({ name: '  Test SOFIPO ', rate: '14.5' })
+    if (!accValid.valid || accValid.data.name !== 'Test SOFIPO' || accValid.data.rate !== 14.5) {
+      throw new Error('validateInvestmentAccount did not sanitize name/rate correctly')
+    }
+    if (validateInvestmentAccount({ name: 'X', rate: '' }).data.rate !== null) {
+      throw new Error('Empty rate should be stored as null')
+    }
+    if (validateInvestmentAccount({ name: '' }).valid) {
+      throw new Error('Empty bank name should be rejected')
+    }
+    if (validateInvestmentPocket({ accountId: 1, name: 'Bad', amount: -5 }).valid) {
+      throw new Error('Negative pocket amount should be rejected')
+    }
+    console.log('   ✓ Investment validators accept/reject inputs correctly')
+
+    const account = await prisma.investmentAccount.create({ data: accValid.data })
+    await prisma.investmentPocket.createMany({
+      data: [
+        { accountId: account.id, name: 'Emergencia', amount: 10000 },
+        { accountId: account.id, name: 'Vacaciones', amount: 8000 },
+        { accountId: account.id, name: 'Casa', amount: 6000 },
+      ],
+    })
+    const withPockets = await prisma.investmentAccount.findUnique({
+      where: { id: account.id },
+      include: { pockets: true },
+    })
+    const total = withPockets.pockets.reduce((s, p) => s + p.amount, 0)
+    if (total !== 24000) throw new Error(`Expected bank total 24000, got ${total}`)
+    console.log('   ✓ Created bank with 3 pockets, total = 24000')
+
+    const firstPocket = withPockets.pockets[0]
+    await prisma.investmentPocket.update({ where: { id: firstPocket.id }, data: { amount: 12000 } })
+    console.log('   ✓ Updated pocket amount')
+
+    await prisma.investmentAccount.delete({ where: { id: account.id } })
+    const orphanCount = await prisma.investmentPocket.count({ where: { accountId: account.id } })
+    if (orphanCount !== 0) throw new Error(`Cascade delete failed: ${orphanCount} pockets remain`)
+    console.log('   ✓ Deleting bank cascades to its pockets')
+  } catch (err) {
+    console.error('   ❌ Investment test failed:', err.message)
     failed++
   }
 

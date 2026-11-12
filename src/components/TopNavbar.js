@@ -9,6 +9,7 @@ const routeTitles = {
   '/payroll': 'Payroll',
   '/fixed-expenses': 'Fixed Expenses',
   '/variable-expenses': 'Variable Expenses',
+  '/investments': 'Investments',
 };
 
 export default function TopNavbar() {

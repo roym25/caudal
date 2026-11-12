@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DashboardIcon, BanknoteIcon, CalendarIcon, ReceiptIcon } from '@/components/icons';
+import { DashboardIcon, BanknoteIcon, CalendarIcon, ReceiptIcon, TrendUpIcon } from '@/components/icons';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: DashboardIcon },
   { href: '/payroll', label: 'Payroll', icon: BanknoteIcon },
   { href: '/fixed-expenses', label: 'Fixed', icon: CalendarIcon },
   { href: '/variable-expenses', label: 'Variable', icon: ReceiptIcon },
+  { href: '/investments', label: 'Invest', icon: TrendUpIcon },
 ];
 
 export default function BottomNavbar() {
@@ -20,7 +21,7 @@ export default function BottomNavbar() {
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-caudal-surface/95 backdrop-blur-xl border-t border-caudal-border/80 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] transition-transform duration-300"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="grid grid-cols-4 h-15 max-w-lg mx-auto px-1 items-stretch">
+      <div className="grid grid-cols-5 h-15 max-w-lg mx-auto px-1 items-stretch">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;

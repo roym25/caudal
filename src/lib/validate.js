@@ -177,3 +177,60 @@ export function validateFixedPayment(body) {
   }
 }
 
+export function validateInvestmentAccount(body) {
+  const errors = []
+
+  if (!body.name || String(body.name).trim() === '') {
+    errors.push('name is required')
+  }
+
+  let rate = null
+  if (body.rate !== undefined && body.rate !== null && body.rate !== '') {
+    rate = parseFloat(body.rate)
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      errors.push('rate must be a number between 0 and 100')
+    }
+  }
+
+  if (errors.length > 0) return { valid: false, errors }
+
+  return {
+    valid: true,
+    data: {
+      name: String(body.name).trim(),
+      rate,
+    },
+  }
+}
+
+export function validateInvestmentPocket(body, { requireAccount = true } = {}) {
+  const errors = []
+
+  let accountId
+  if (requireAccount) {
+    accountId = parseInt(body.accountId, 10)
+    if (isNaN(accountId)) {
+      errors.push('accountId is required and must be an integer')
+    }
+  }
+
+  if (!body.name || String(body.name).trim() === '') {
+    errors.push('name is required')
+  }
+
+  const amount = parseFloat(body.amount)
+  if (isNaN(amount) || amount < 0) {
+    errors.push('amount must be a non-negative number')
+  }
+
+  if (errors.length > 0) return { valid: false, errors }
+
+  const data = {
+    name: String(body.name).trim(),
+    amount,
+  }
+  if (requireAccount) data.accountId = accountId
+
+  return { valid: true, data }
+}
+
