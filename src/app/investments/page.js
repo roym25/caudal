@@ -6,6 +6,9 @@ import {
   PencilIcon,
   TrashIcon,
   PlusIcon,
+  MinusIcon,
+  CheckIcon,
+  XMarkIcon,
   EyeIcon,
   EyeSlashIcon,
   TrendUpIcon,
@@ -58,6 +61,10 @@ export default function InvestmentsPage() {
   const [panel, setPanel] = useState(null);
   const [accountForm, setAccountForm] = useState({ name: '', rate: '', maxAmount: '', color: 'green' });
   const [pocketForm, setPocketForm] = useState({ name: '', amount: '' });
+
+  // Quick +/- inline adjustment state: { pocketId, mode: 'add' | 'subtract', delta: '' }
+  const [adjustState, setAdjustState] = useState(null);
+  const [isAdjusting, setIsAdjusting] = useState(false);
 
   const showToast = (message, type = 'success') => setToast({ message, type });
 
@@ -220,6 +227,7 @@ export default function InvestmentsPage() {
         return;
       }
       showToast('Bank deleted');
+      closePanel();
       fetchAccounts();
     } catch (err) {
       console.error('Error deleting bank:', err);
@@ -236,10 +244,67 @@ export default function InvestmentsPage() {
         return;
       }
       showToast('Pocket deleted');
+      closePanel();
       fetchAccounts();
     } catch (err) {
       console.error('Error deleting pocket:', err);
       showToast('Network error while deleting', 'error');
+    }
+  };
+
+  const toggleAdjustPocket = (pocketId, mode) => {
+    setAdjustState((prev) => {
+      if (prev?.pocketId === pocketId && prev?.mode === mode) return null;
+      return { pocketId, mode, delta: '' };
+    });
+  };
+
+  const submitAdjustPocket = async (e, pocket) => {
+    e.preventDefault();
+    if (!adjustState || isAdjusting) return;
+    const delta = parseFloat(adjustState.delta);
+    if (isNaN(delta) || delta <= 0) {
+      showToast('Enter a positive amount', 'error');
+      return;
+    }
+
+    const newAmount =
+      adjustState.mode === 'add'
+        ? (pocket.amount || 0) + delta
+        : (pocket.amount || 0) - delta;
+
+    if (newAmount < 0) {
+      showToast('Cannot subtract more than the pocket balance', 'error');
+      return;
+    }
+
+    setIsAdjusting(true);
+    try {
+      const res = await fetch(`/api/investment-pockets/${pocket.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: pocket.name,
+          amount: Math.round(newAmount * 100) / 100,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        showToast(err.errors?.join(', ') || 'Failed to update pocket', 'error');
+        return;
+      }
+      setAdjustState(null);
+      showToast(
+        adjustState.mode === 'add'
+          ? `Added ${formatMoney(delta)} to ${pocket.name}`
+          : `Removed ${formatMoney(delta)} from ${pocket.name}`
+      );
+      fetchAccounts();
+    } catch (err) {
+      console.error('Error adjusting pocket:', err);
+      showToast('Network error while updating', 'error');
+    } finally {
+      setIsAdjusting(false);
     }
   };
 
@@ -418,14 +483,6 @@ export default function InvestmentsPage() {
                       >
                         <PencilIcon className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => deleteAccount(account)}
-                        className="p-2 text-caudal-text-muted hover:text-caudal-error hover:bg-caudal-surface-alt rounded-lg transition-colors"
-                        title="Delete bank"
-                        aria-label={`Delete ${account.name}`}
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
 
@@ -465,30 +522,126 @@ export default function InvestmentsPage() {
                 <div className="flex-1 px-2 sm:px-3 py-2">
                   {account.pockets?.length > 0 ? (
                     <ul className="divide-y divide-caudal-border/50">
-                      {account.pockets.map((pocket) => (
-                        <li key={pocket.id} className="group flex items-center justify-between gap-2 px-2 py-2.5">
-                          <span className="text-sm text-caudal-text truncate">{pocket.name}</span>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span className="text-sm font-semibold text-caudal-text mr-1">{money(pocket.amount)}</span>
-                            <button
-                              onClick={() => openEditPocket(pocket)}
-                              className="p-1.5 text-caudal-text-dim hover:text-caudal-text hover:bg-caudal-surface-alt rounded transition-colors md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100"
-                              title="Edit pocket"
-                              aria-label={`Edit ${pocket.name}`}
-                            >
-                              <PencilIcon className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => deletePocket(pocket)}
-                              className="p-1.5 text-caudal-text-dim hover:text-caudal-error hover:bg-caudal-surface-alt rounded transition-colors md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100"
-                              title="Delete pocket"
-                              aria-label={`Delete ${pocket.name}`}
-                            >
-                              <TrashIcon className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </li>
-                      ))}
+                      {account.pockets.map((pocket) => {
+                        const isAdjustingThis = adjustState?.pocketId === pocket.id;
+                        const isAddMode = adjustState?.mode === 'add';
+                        const parsedDelta = parseFloat(adjustState?.delta);
+                        const hasValidDelta = !isNaN(parsedDelta) && parsedDelta > 0;
+                        const previewAmount = hasValidDelta
+                          ? isAddMode
+                            ? (pocket.amount || 0) + parsedDelta
+                            : (pocket.amount || 0) - parsedDelta
+                          : null;
+
+                        return (
+                          <li key={pocket.id} className="px-2 py-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm text-caudal-text truncate">{pocket.name}</span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className="text-sm font-semibold text-caudal-text mr-1.5">
+                                  {money(pocket.amount)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleAdjustPocket(pocket.id, 'add')}
+                                  className={`w-7 h-7 rounded-md flex items-center justify-center border transition-colors ${
+                                    isAdjustingThis && isAddMode
+                                      ? 'bg-caudal-green text-caudal-bg border-caudal-green'
+                                      : 'bg-caudal-surface-alt border-caudal-border text-caudal-green hover:border-caudal-green/60'
+                                  }`}
+                                  title={`Add to ${pocket.name}`}
+                                  aria-label={`Add to ${pocket.name}`}
+                                >
+                                  <PlusIcon className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleAdjustPocket(pocket.id, 'subtract')}
+                                  className={`w-7 h-7 rounded-md flex items-center justify-center border transition-colors ${
+                                    isAdjustingThis && !isAddMode
+                                      ? 'bg-caudal-orange text-caudal-text border-caudal-orange'
+                                      : 'bg-caudal-surface-alt border-caudal-border text-caudal-orange hover:border-caudal-orange/60'
+                                  }`}
+                                  title={`Subtract from ${pocket.name}`}
+                                  aria-label={`Subtract from ${pocket.name}`}
+                                >
+                                  <MinusIcon className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openEditPocket(pocket)}
+                                  className="w-7 h-7 rounded-md flex items-center justify-center text-caudal-text-dim hover:text-caudal-text hover:bg-caudal-surface-alt transition-colors"
+                                  title={`Edit ${pocket.name}`}
+                                  aria-label={`Edit ${pocket.name}`}
+                                >
+                                  <PencilIcon className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Inline quick + / - bar */}
+                            {isAdjustingThis && (
+                              <form
+                                onSubmit={(e) => submitAdjustPocket(e, pocket)}
+                                className="mt-2 p-2 rounded-lg bg-caudal-surface-alt border border-caudal-border flex items-center gap-2"
+                              >
+                                <span
+                                  className={`text-xs font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                                    isAddMode
+                                      ? 'bg-caudal-green/15 text-caudal-green'
+                                      : 'bg-caudal-orange/15 text-caudal-orange'
+                                  }`}
+                                >
+                                  {isAddMode ? '+ Add' : '− Remove'}
+                                </span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0.01"
+                                  inputMode="decimal"
+                                  autoFocus
+                                  placeholder="Amount..."
+                                  value={adjustState.delta}
+                                  onChange={(e) => setAdjustState({ ...adjustState, delta: e.target.value })}
+                                  className="w-full min-w-0 bg-caudal-surface border border-caudal-border rounded px-2.5 py-1 text-xs text-caudal-text focus:outline-none focus:border-caudal-green"
+                                  required
+                                />
+                                {previewAmount !== null && (
+                                  <span
+                                    className={`text-[11px] font-semibold shrink-0 hidden sm:inline ${
+                                      previewAmount < 0 ? 'text-caudal-error' : 'text-caudal-text-muted'
+                                    }`}
+                                  >
+                                    → {formatMoney(Math.max(0, previewAmount))}
+                                  </span>
+                                )}
+                                <button
+                                  type="submit"
+                                  disabled={isAdjusting}
+                                  className={`p-1.5 rounded font-semibold transition-colors shrink-0 ${
+                                    isAddMode
+                                      ? 'bg-caudal-green text-caudal-bg hover:bg-caudal-green-dim'
+                                      : 'bg-caudal-orange text-caudal-text hover:bg-caudal-orange-dim'
+                                  }`}
+                                  title="Apply"
+                                  aria-label="Apply amount change"
+                                >
+                                  <CheckIcon className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setAdjustState(null)}
+                                  className="p-1.5 rounded text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface transition-colors shrink-0"
+                                  title="Cancel"
+                                  aria-label="Cancel"
+                                >
+                                  <XMarkIcon className="w-3.5 h-3.5" />
+                                </button>
+                              </form>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <p className="text-xs text-caudal-text-dim text-center py-4">No pockets yet</p>
@@ -602,13 +755,26 @@ export default function InvestmentsPage() {
               })}
             </div>
           </div>
-          <div className="pt-4">
+          <div className="pt-4 space-y-2.5">
             <button
               type="submit"
               className="w-full bg-caudal-green text-caudal-bg font-semibold rounded-lg px-4 py-2.5 hover:bg-caudal-green-dim transition-colors"
             >
               {panel?.editingId ? 'Save Changes' : 'Add Bank'}
             </button>
+            {panel?.editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  const acc = accounts.find((a) => a.id === panel.editingId);
+                  if (acc) deleteAccount(acc);
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-caudal-error/10 border border-caudal-error/30 text-caudal-error font-semibold rounded-lg px-4 py-2.5 hover:bg-caudal-error/20 transition-colors"
+              >
+                <TrashIcon className="w-4 h-4" />
+                Delete Bank
+              </button>
+            )}
           </div>
         </form>
       </SlidePanel>
@@ -645,13 +811,27 @@ export default function InvestmentsPage() {
               required
             />
           </div>
-          <div className="pt-4">
+          <div className="pt-4 space-y-2.5">
             <button
               type="submit"
               className="w-full bg-caudal-green text-caudal-bg font-semibold rounded-lg px-4 py-2.5 hover:bg-caudal-green-dim transition-colors"
             >
               {panel?.editingId ? 'Save Changes' : 'Add Pocket'}
             </button>
+            {panel?.editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  const acc = accounts.find((a) => a.id === panel.accountId);
+                  const pk = acc?.pockets?.find((p) => p.id === panel.editingId);
+                  if (pk) deletePocket(pk);
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-caudal-error/10 border border-caudal-error/30 text-caudal-error font-semibold rounded-lg px-4 py-2.5 hover:bg-caudal-error/20 transition-colors"
+              >
+                <TrashIcon className="w-4 h-4" />
+                Delete Pocket
+              </button>
+            )}
           </div>
         </form>
       </SlidePanel>
