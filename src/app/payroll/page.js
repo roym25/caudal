@@ -238,7 +238,7 @@ export default function PayrollPage() {
           )}
           <button
             onClick={() => setShowForm(true)}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-caudal-green text-black font-semibold rounded-lg hover:bg-opacity-90 transition-colors cursor-pointer min-h-[38px]"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-caudal-green text-caudal-bg font-semibold rounded-lg hover:bg-caudal-green-dim transition-colors cursor-pointer min-h-[38px]"
           >
             <PlusIcon className="w-4 h-4" />
             New Payroll
@@ -291,7 +291,7 @@ export default function PayrollPage() {
             <input type="text" name="notes" placeholder="Optional notes" value={formData.notes} onChange={handleInputChange} className="w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors" />
           </div>
           <div className="pt-4">
-            <button type="submit" className="w-full bg-caudal-green text-black font-semibold rounded-lg px-4 py-2.5 hover:bg-opacity-90 transition-colors">
+            <button type="submit" className="w-full bg-caudal-green text-caudal-bg font-semibold rounded-lg px-4 py-2.5 hover:bg-caudal-green-dim transition-colors">
               Save Payroll
             </button>
           </div>

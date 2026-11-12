@@ -15,7 +15,7 @@ export default function Toast({ message, type = 'success', onClose }) {
   const borderColors = {
     success: 'border-caudal-green',
     error: 'border-caudal-error',
-    info: 'border-blue-500'
+    info: 'border-caudal-text-muted'
   };
 
   const borderColor = borderColors[type] || borderColors.success;

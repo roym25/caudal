@@ -177,6 +177,8 @@ export function validateFixedPayment(body) {
   }
 }
 
+const ALLOWED_BANK_COLORS = ['green', 'yellow', 'orange', 'emerald', 'coral']
+
 export function validateInvestmentAccount(body) {
   const errors = []
 
@@ -192,6 +194,24 @@ export function validateInvestmentAccount(body) {
     }
   }
 
+  let maxAmount = null
+  if (body.maxAmount !== undefined && body.maxAmount !== null && body.maxAmount !== '') {
+    maxAmount = parseFloat(body.maxAmount)
+    if (isNaN(maxAmount) || maxAmount <= 0) {
+      errors.push('maxAmount must be a positive number')
+    }
+  }
+
+  let color = null
+  if (body.color !== undefined && body.color !== null && String(body.color).trim() !== '') {
+    const normalizedColor = String(body.color).trim().toLowerCase()
+    if (!ALLOWED_BANK_COLORS.includes(normalizedColor)) {
+      errors.push(`color must be one of: ${ALLOWED_BANK_COLORS.join(', ')}`)
+    } else {
+      color = normalizedColor
+    }
+  }
+
   if (errors.length > 0) return { valid: false, errors }
 
   return {
@@ -199,6 +219,8 @@ export function validateInvestmentAccount(body) {
     data: {
       name: String(body.name).trim(),
       rate,
+      maxAmount,
+      color,
     },
   }
 }

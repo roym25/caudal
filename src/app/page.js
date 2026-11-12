@@ -305,15 +305,15 @@ export default function DashboardPage() {
         </div>
 
         {/* ISR Retained (Taxes) */}
-        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-3.5 sm:p-5 hover:border-caudal-error/30 transition-colors flex flex-col justify-between">
+        <div className="bg-caudal-surface border border-caudal-border rounded-xl p-3.5 sm:p-5 hover:border-caudal-orange/30 transition-colors flex flex-col justify-between">
           <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-caudal-error/10 flex items-center justify-center text-caudal-error shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-caudal-orange/10 flex items-center justify-center text-caudal-orange shrink-0">
               <ReceiptIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <h3 className="text-xs sm:text-sm font-medium text-caudal-text-muted truncate">ISR Retained</h3>
           </div>
           <div>
-            <div className="text-lg sm:text-2xl font-bold text-caudal-error truncate">{formatMoney(totalIsr)}</div>
+            <div className="text-lg sm:text-2xl font-bold text-caudal-orange truncate">{formatMoney(totalIsr)}</div>
             <p className="text-[10px] sm:text-xs text-caudal-text-dim mt-0.5 sm:mt-1.5 truncate">
               Payroll tax deducted
             </p>

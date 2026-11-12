@@ -189,12 +189,30 @@ async function runTests() {
   // Test: Investment accounts & pockets (CRUD, totals, cascade delete, validation)
   try {
     console.log('\nTesting InvestmentAccount & InvestmentPocket CRUD...')
-    const accValid = validateInvestmentAccount({ name: '  Test SOFIPO ', rate: '14.5' })
-    if (!accValid.valid || accValid.data.name !== 'Test SOFIPO' || accValid.data.rate !== 14.5) {
-      throw new Error('validateInvestmentAccount did not sanitize name/rate correctly')
+    const accValid = validateInvestmentAccount({
+      name: '  Test SOFIPO ',
+      rate: '13',
+      maxAmount: '30000',
+      color: 'green',
+    })
+    if (
+      !accValid.valid ||
+      accValid.data.name !== 'Test SOFIPO' ||
+      accValid.data.rate !== 13 ||
+      accValid.data.maxAmount !== 30000 ||
+      accValid.data.color !== 'green'
+    ) {
+      throw new Error('validateInvestmentAccount did not sanitize name/rate/maxAmount/color correctly')
     }
-    if (validateInvestmentAccount({ name: 'X', rate: '' }).data.rate !== null) {
-      throw new Error('Empty rate should be stored as null')
+    const emptyOpt = validateInvestmentAccount({ name: 'X', rate: '', maxAmount: '', color: '' })
+    if (emptyOpt.data.rate !== null || emptyOpt.data.maxAmount !== null || emptyOpt.data.color !== null) {
+      throw new Error('Empty rate/maxAmount/color should be stored as null')
+    }
+    if (validateInvestmentAccount({ name: 'X', maxAmount: -100 }).valid) {
+      throw new Error('Negative maxAmount should be rejected')
+    }
+    if (validateInvestmentAccount({ name: 'X', color: 'neon-pink' }).valid) {
+      throw new Error('Off-palette color should be rejected')
     }
     if (validateInvestmentAccount({ name: '' }).valid) {
       throw new Error('Empty bank name should be rejected')

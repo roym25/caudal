@@ -13,9 +13,36 @@ import {
 import Toast from '@/components/Toast';
 import SlidePanel from '@/components/SlidePanel';
 
-// Accent palette assigned to each bank by position
-const BANK_COLORS = ['#00C853', '#E65100', '#3B82F6', '#A855F7', '#F59E0B', '#14B8A6'];
-const DEFAULT_BANKS = ['OpenBank', 'Mercado Pago', 'DidiCuenta'];
+// Caudal v2.0 official palette swatches selectable from the UI
+const PALETTE_SWATCHES = [
+  { key: 'green', label: 'Green', cssVar: 'var(--caudal-green)' },
+  { key: 'yellow', label: 'Yellow', cssVar: 'var(--caudal-warning)' },
+  { key: 'orange', label: 'Orange', cssVar: 'var(--caudal-orange)' },
+  { key: 'emerald', label: 'Emerald', cssVar: 'var(--caudal-success)' },
+  { key: 'coral', label: 'Coral', cssVar: 'var(--caudal-error)' },
+];
+
+const inferColorKey = (account, idx = 0) => {
+  if (account?.color && PALETTE_SWATCHES.some((s) => s.key === account.color)) {
+    return account.color;
+  }
+  const normalized = String(account?.name || '').toLowerCase().replace(/\s+/g, '');
+  if (normalized.includes('openbank')) return 'green';
+  if (normalized.includes('mercado')) return 'yellow';
+  if (normalized.includes('didi')) return 'orange';
+  return PALETTE_SWATCHES[idx % PALETTE_SWATCHES.length].key;
+};
+
+const getBankColor = (account, idx) => {
+  const key = inferColorKey(account, idx);
+  return PALETTE_SWATCHES.find((s) => s.key === key)?.cssVar || 'var(--caudal-green)';
+};
+
+const DEFAULT_BANKS = [
+  { name: 'OpenBank', rate: 13, maxAmount: 30000, color: 'green' },
+  { name: 'Mercado Pago', rate: 12, maxAmount: 25000, color: 'yellow' },
+  { name: 'DidiCuenta', rate: 15, maxAmount: 10000, color: 'orange' },
+];
 
 const inputClass =
   'w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors';
@@ -29,7 +56,7 @@ export default function InvestmentsPage() {
 
   // Panel state: { kind: 'account' | 'pocket', editingId, accountId }
   const [panel, setPanel] = useState(null);
-  const [accountForm, setAccountForm] = useState({ name: '', rate: '' });
+  const [accountForm, setAccountForm] = useState({ name: '', rate: '', maxAmount: '', color: 'green' });
   const [pocketForm, setPocketForm] = useState({ name: '', amount: '' });
 
   const showToast = (message, type = 'success') => setToast({ message, type });
@@ -73,8 +100,22 @@ export default function InvestmentsPage() {
   // ---------- Calculations ----------
   const accountsWithTotals = accounts.map((a, idx) => {
     const total = (a.pockets || []).reduce((s, p) => s + (p.amount || 0), 0);
-    const annualYield = a.rate ? (total * a.rate) / 100 : 0;
-    return { ...a, total, annualYield, color: BANK_COLORS[idx % BANK_COLORS.length] };
+    const hasCap = Boolean(a.maxAmount && a.maxAmount > 0);
+    const effectivePrincipal = hasCap ? Math.min(total, a.maxAmount) : total;
+    const annualYield = a.rate ? (effectivePrincipal * a.rate) / 100 : 0;
+    const capPercent = hasCap ? Math.min(100, (total / a.maxAmount) * 100) : 0;
+    const capDiff = hasCap ? a.maxAmount - total : null;
+    return {
+      ...a,
+      total,
+      hasCap,
+      effectivePrincipal,
+      annualYield,
+      capPercent,
+      capDiff,
+      colorKey: inferColorKey(a, idx),
+      color: getBankColor(a, idx),
+    };
   });
   const grandTotal = accountsWithTotals.reduce((s, a) => s + a.total, 0);
   const totalAnnualYield = accountsWithTotals.reduce((s, a) => s + a.annualYield, 0);
@@ -83,12 +124,18 @@ export default function InvestmentsPage() {
 
   // ---------- Panel openers ----------
   const openNewAccount = () => {
-    setAccountForm({ name: '', rate: '' });
+    const nextColor = PALETTE_SWATCHES[accounts.length % PALETTE_SWATCHES.length].key;
+    setAccountForm({ name: '', rate: '', maxAmount: '', color: nextColor });
     setPanel({ kind: 'account', editingId: null });
   };
 
   const openEditAccount = (account) => {
-    setAccountForm({ name: account.name, rate: account.rate ?? '' });
+    setAccountForm({
+      name: account.name,
+      rate: account.rate ?? '',
+      maxAmount: account.maxAmount ?? '',
+      color: account.colorKey || inferColorKey(account),
+    });
     setPanel({ kind: 'account', editingId: account.id });
   };
 
@@ -115,6 +162,8 @@ export default function InvestmentsPage() {
         body: JSON.stringify({
           name: accountForm.name,
           rate: accountForm.rate === '' ? null : parseFloat(accountForm.rate),
+          maxAmount: accountForm.maxAmount === '' ? null : parseFloat(accountForm.maxAmount),
+          color: accountForm.color || null,
         }),
       });
       if (!res.ok) {
@@ -197,11 +246,11 @@ export default function InvestmentsPage() {
   const quickSetup = async () => {
     setIsSettingUp(true);
     try {
-      for (const name of DEFAULT_BANKS) {
+      for (const bank of DEFAULT_BANKS) {
         await fetch('/api/investment-accounts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name }),
+          body: JSON.stringify(bank),
         });
       }
       showToast('Banks created — now add your pockets');
@@ -263,7 +312,7 @@ export default function InvestmentsPage() {
               disabled={isSettingUp}
               className="px-4 py-2.5 bg-caudal-green text-caudal-bg font-semibold rounded-lg hover:bg-caudal-green-dim transition-colors disabled:opacity-50"
             >
-              {isSettingUp ? 'Creating...' : `Quick setup: ${DEFAULT_BANKS.join(', ')}`}
+              {isSettingUp ? 'Creating...' : `Quick setup: ${DEFAULT_BANKS.map((b) => b.name).join(', ')}`}
             </button>
             <button
               onClick={openNewAccount}
@@ -341,10 +390,17 @@ export default function InvestmentsPage() {
                 <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-caudal-border/60">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h2 className="text-base font-bold text-caudal-text truncate">{account.name}</h2>
                         {account.rate ? (
-                          <span className="px-2 py-0.5 rounded-full bg-caudal-green/10 border border-caudal-green/20 text-caudal-green text-[11px] font-semibold shrink-0">
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 border"
+                            style={{
+                              color: account.color,
+                              borderColor: `color-mix(in srgb, ${account.color} 35%, transparent)`,
+                              backgroundColor: `color-mix(in srgb, ${account.color} 12%, transparent)`,
+                            }}
+                          >
                             {account.rate}% annual
                           </span>
                         ) : null}
@@ -372,6 +428,37 @@ export default function InvestmentsPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Yield cap progress bar */}
+                  {account.hasCap && (
+                    <div className="mt-3 pt-2.5 border-t border-caudal-border/50">
+                      <div className="flex items-center justify-between text-[11px] mb-1.5 gap-2">
+                        <span className="text-caudal-text-muted">
+                          Yield cap: <span className="font-semibold text-caudal-text">{money(account.maxAmount)}</span>
+                        </span>
+                        {account.capDiff > 0 ? (
+                          <span className="text-caudal-text-dim font-medium">
+                            {money(account.capDiff)} room left ({account.capPercent.toFixed(0)}%)
+                          </span>
+                        ) : account.capDiff === 0 ? (
+                          <span className="font-semibold text-caudal-green">Cap full (100%)</span>
+                        ) : (
+                          <span className="font-semibold text-caudal-warning">
+                            +{money(Math.abs(account.capDiff))} over cap
+                          </span>
+                        )}
+                      </div>
+                      <div className="h-1.5 w-full bg-caudal-surface-alt rounded-full overflow-hidden">
+                        <div
+                          className="h-full transition-all duration-500 rounded-full"
+                          style={{
+                            width: `${account.capPercent}%`,
+                            backgroundColor: account.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Pockets */}
@@ -419,9 +506,11 @@ export default function InvestmentsPage() {
                 {/* Yield footer */}
                 {account.rate ? (
                   <div className="px-4 sm:px-5 py-2.5 border-t border-caudal-border/60 bg-caudal-surface-alt/40 flex items-center justify-between text-xs text-caudal-text-dim">
-                    <span>Est. yield</span>
+                    <span>
+                      Est. yield{account.hasCap && account.total > account.maxAmount ? ' (capped)' : ''}
+                    </span>
                     <span className="font-semibold text-caudal-text-muted">
-                      ≈ {money(account.annualYield / 12)}/mo
+                      ≈ {money(account.annualYield / 12)}/mo · {money(account.annualYield)}/yr
                     </span>
                   </div>
                 ) : null}
@@ -431,7 +520,7 @@ export default function InvestmentsPage() {
 
           {hasAnyRate && (
             <p className="text-[11px] text-caudal-text-dim text-center">
-              Yields are gross estimates based on the annual rate you entered. Balances show only the amounts you put in.
+              Yields are gross estimates based on the annual rate and yield cap you entered. Balances show only the amounts you put in.
             </p>
           )}
         </>
@@ -448,27 +537,70 @@ export default function InvestmentsPage() {
             <label className="block text-sm text-caudal-text-muted mb-1">Bank name</label>
             <input
               type="text"
-              placeholder="e.g. OpenBank, Mercado Pago, DidiCuenta"
+              placeholder="e.g. OpenBank, Mercado Pago, DidiCuenta, Nu"
               value={accountForm.name}
               onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
               className={inputClass}
               required
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm text-caudal-text-muted mb-1">Annual rate % (Optional)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                inputMode="decimal"
+                placeholder="e.g. 13"
+                value={accountForm.rate}
+                onChange={(e) => setAccountForm({ ...accountForm, rate: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-caudal-text-muted mb-1">Yield cap $ (Optional)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                placeholder="e.g. 30000"
+                value={accountForm.maxAmount}
+                onChange={(e) => setAccountForm({ ...accountForm, maxAmount: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-caudal-text-dim -mt-2">
+            If the bank only pays interest up to a maximum balance (e.g. $30,000), enter it in Yield cap. Leave empty if uncapped.
+          </p>
           <div>
-            <label className="block text-sm text-caudal-text-muted mb-1">Annual rate % (Optional)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              inputMode="decimal"
-              placeholder="e.g. 14"
-              value={accountForm.rate}
-              onChange={(e) => setAccountForm({ ...accountForm, rate: e.target.value })}
-              className={inputClass}
-            />
-            <p className="text-xs text-caudal-text-dim mt-1">Only used to estimate how much it yields.</p>
+            <label className="block text-sm text-caudal-text-muted mb-2">Accent color</label>
+            <div className="grid grid-cols-5 gap-2">
+              {PALETTE_SWATCHES.map((swatch) => {
+                const isSelected = accountForm.color === swatch.key;
+                return (
+                  <button
+                    key={swatch.key}
+                    type="button"
+                    onClick={() => setAccountForm({ ...accountForm, color: swatch.key })}
+                    className={`flex flex-col items-center gap-1.5 py-2 px-1 rounded-lg border transition-all ${
+                      isSelected
+                        ? 'bg-caudal-surface-alt border-caudal-text text-caudal-text font-semibold'
+                        : 'bg-caudal-surface border-caudal-border text-caudal-text-muted hover:border-caudal-text-dim'
+                    }`}
+                  >
+                    <span
+                      className="w-5 h-5 rounded-full inline-block"
+                      style={{ backgroundColor: swatch.cssVar }}
+                    />
+                    <span className="text-[11px]">{swatch.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="pt-4">
             <button

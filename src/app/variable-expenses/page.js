@@ -230,7 +230,7 @@ export default function VariableExpensesPage() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-caudal-orange text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors w-full sm:w-auto min-h-[38px]"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-caudal-orange text-caudal-text font-semibold rounded-lg hover:bg-caudal-orange-dim transition-colors w-full sm:w-auto min-h-[38px]"
         >
           <PlusIcon className="w-4 h-4" />
           New Variable Expense
@@ -286,7 +286,7 @@ export default function VariableExpensesPage() {
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-caudal-orange text-white font-semibold rounded-lg px-4 py-2.5 hover:bg-opacity-90 transition-colors"
+              className="w-full bg-caudal-orange text-caudal-text font-semibold rounded-lg px-4 py-2.5 hover:bg-caudal-orange-dim transition-colors"
             >
               Save Variable Expense
             </button>

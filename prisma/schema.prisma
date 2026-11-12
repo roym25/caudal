@@ -58,6 +58,8 @@ model InvestmentAccount {
   id        Int                @id @default(autoincrement())
   name      String
   rate      Float?             // Rendimiento anual (%) opcional, solo referencia
+  maxAmount Float?             // Monto máximo / tope que genera rendimiento (opcional)
+  color     String?            // Token de color de la paleta Caudal v2.0 (opcional)
   pockets   InvestmentPocket[]
   createdAt DateTime           @default(now())
 }

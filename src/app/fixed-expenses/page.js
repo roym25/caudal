@@ -313,7 +313,7 @@ export default function FixedExpensesPage() {
 
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-caudal-green text-black font-semibold rounded-lg hover:bg-opacity-90 transition-colors w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-caudal-green text-caudal-bg font-semibold rounded-lg hover:bg-caudal-green-dim transition-colors w-full sm:w-auto"
         >
           <PlusIcon className="w-4 h-4" />
           New Fixed Expense
@@ -363,7 +363,7 @@ export default function FixedExpensesPage() {
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-caudal-green text-black font-semibold rounded-lg px-4 py-2.5 hover:bg-opacity-90 transition-colors"
+              className="w-full bg-caudal-green text-caudal-bg font-semibold rounded-lg px-4 py-2.5 hover:bg-caudal-green-dim transition-colors"
             >
               Save Fixed Expense
             </button>
@@ -448,7 +448,7 @@ export default function FixedExpensesPage() {
                           onContextMenu={(e) => handleMonthContextMenu(e, expense, monthIndex)}
                           className={`relative w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center mx-auto ${
                             isPaid
-                              ? 'bg-caudal-green text-black hover:bg-opacity-80 scale-105'
+                              ? 'bg-caudal-green text-caudal-bg hover:bg-caudal-green-dim scale-105'
                               : 'bg-caudal-surface-alt border border-caudal-border text-caudal-text-dim hover:border-caudal-text-muted hover:text-caudal-text'
                           }`}
                           title={
@@ -598,7 +598,7 @@ export default function FixedExpensesPage() {
                 <button
                   type="button"
                   onClick={handleSavePaymentAmount}
-                  className="px-4 py-2 bg-caudal-green text-black font-semibold text-xs rounded-lg hover:bg-opacity-90 transition-colors min-h-[38px] flex items-center justify-center"
+                  className="px-4 py-2 bg-caudal-green text-caudal-bg font-semibold text-xs rounded-lg hover:bg-caudal-green-dim transition-colors min-h-[38px] flex items-center justify-center"
                 >
                   Save
                 </button>
