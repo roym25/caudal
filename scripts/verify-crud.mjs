@@ -239,13 +239,26 @@ async function runTests() {
     console.log('   ✓ Created bank with 3 pockets, total = 24000')
 
     const firstPocket = withPockets.pockets[0]
+    await prisma.investmentMovement.create({
+      data: {
+        accountId: account.id,
+        pocketId: firstPocket.id,
+        pocketName: firstPocket.name,
+        type: 'deposit',
+        amount: 2000,
+        date: new Date('2026-11-12T12:00:00.000Z'),
+      },
+    })
     await prisma.investmentPocket.update({ where: { id: firstPocket.id }, data: { amount: 12000 } })
-    console.log('   ✓ Updated pocket amount')
+    console.log('   ✓ Updated pocket amount and recorded InvestmentMovement')
 
     await prisma.investmentAccount.delete({ where: { id: account.id } })
     const orphanCount = await prisma.investmentPocket.count({ where: { accountId: account.id } })
-    if (orphanCount !== 0) throw new Error(`Cascade delete failed: ${orphanCount} pockets remain`)
-    console.log('   ✓ Deleting bank cascades to its pockets')
+    const orphanMovCount = await prisma.investmentMovement.count({ where: { accountId: account.id } })
+    if (orphanCount !== 0 || orphanMovCount !== 0) {
+      throw new Error(`Cascade delete failed: ${orphanCount} pockets and ${orphanMovCount} movements remain`)
+    }
+    console.log('   ✓ Deleting bank cascades to its pockets and movements')
   } catch (err) {
     console.error('   ❌ Investment test failed:', err.message)
     failed++

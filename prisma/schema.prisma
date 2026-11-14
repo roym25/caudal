@@ -56,21 +56,37 @@ model VariableExpense {
 
 // Banco / SOFIPO de inversión
 model InvestmentAccount {
-  id        Int                @id @default(autoincrement())
+  id        Int                  @id @default(autoincrement())
   name      String
-  rate      Float?             // Rendimiento anual (%) opcional, solo referencia
-  maxAmount Float?             // Monto máximo / tope que genera rendimiento (opcional)
-  color     String?            // Token de color de la paleta Caudal v2.0 (opcional)
+  rate      Float?               // Rendimiento anual (%) opcional, solo referencia
+  maxAmount Float?               // Monto máximo / tope que genera rendimiento (opcional)
+  color     String?              // Token de color de la paleta Caudal v2.0 (opcional)
   pockets   InvestmentPocket[]
-  createdAt DateTime           @default(now())
+  movements InvestmentMovement[]
+  createdAt DateTime             @default(now())
 }
 
 // Apartado dentro de un banco (Emergencia, Vacaciones, etc.)
 model InvestmentPocket {
-  id        Int               @id @default(autoincrement())
-  account   InvestmentAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id        Int                  @id @default(autoincrement())
+  account   InvestmentAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId Int
   name      String
   amount    Float
-  createdAt DateTime          @default(now())
+  movements InvestmentMovement[]
+  createdAt DateTime             @default(now())
+}
+
+// Historial de altas (+) y bajas (-) en inversiones
+model InvestmentMovement {
+  id         Int               @id @default(autoincrement())
+  account    InvestmentAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId  Int
+  pocket     InvestmentPocket? @relation(fields: [pocketId], references: [id], onDelete: SetNull)
+  pocketId   Int?
+  pocketName String
+  type       String            // "deposit" | "withdrawal"
+  amount     Float
+  date       DateTime          @default(now())
+  createdAt  DateTime          @default(now())
 }

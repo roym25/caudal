@@ -19,7 +19,10 @@ export async function PUT(request, { params }) {
     const account = await prisma.investmentAccount.update({
       where: { id: parsedId },
       data: validation.data,
-      include: { pockets: true },
+      include: {
+        pockets: true,
+        movements: { orderBy: [{ date: "desc" }, { id: "desc" }] },
+      },
     })
     return success(account)
   } catch (error) {

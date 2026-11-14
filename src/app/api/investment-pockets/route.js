@@ -13,6 +13,20 @@ export async function POST(request) {
     const pocket = await prisma.investmentPocket.create({
       data: validation.data,
     })
+
+    if (pocket.amount > 0) {
+      await prisma.investmentMovement.create({
+        data: {
+          accountId: pocket.accountId,
+          pocketId: pocket.id,
+          pocketName: pocket.name,
+          type: "deposit",
+          amount: pocket.amount,
+          date: validation.movementDate || new Date(),
+        },
+      })
+    }
+
     return created(pocket)
   } catch (error) {
     if (error.code === "P2003") {

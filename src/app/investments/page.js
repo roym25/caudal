@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { formatMoney } from '@/lib/format';
+import { formatMoney, formatDate } from '@/lib/format';
 import {
   PencilIcon,
   TrashIcon,
   PlusIcon,
   MinusIcon,
+  InfoIcon,
   CheckIcon,
   XMarkIcon,
   EyeIcon,
@@ -47,6 +48,8 @@ const DEFAULT_BANKS = [
   { name: 'DidiCuenta', rate: 15, maxAmount: 10000, color: 'orange' },
 ];
 
+const todayIso = () => new Date().toISOString().split('T')[0];
+
 const inputClass =
   'w-full bg-caudal-surface-alt border border-caudal-border rounded-lg px-3 py-2 text-caudal-text focus:outline-none focus:border-caudal-green transition-colors';
 
@@ -60,11 +63,14 @@ export default function InvestmentsPage() {
   // Panel state: { kind: 'account' | 'pocket', editingId, accountId }
   const [panel, setPanel] = useState(null);
   const [accountForm, setAccountForm] = useState({ name: '', rate: '', maxAmount: '', color: 'green' });
-  const [pocketForm, setPocketForm] = useState({ name: '', amount: '' });
+  const [pocketForm, setPocketForm] = useState({ name: '', amount: '', date: todayIso() });
 
-  // Quick +/- inline adjustment state: { pocketId, mode: 'add' | 'subtract', delta: '' }
+  // Quick +/- inline adjustment state: { pocketId, mode: 'add' | 'subtract', delta: '', date: 'YYYY-MM-DD' }
   const [adjustState, setAdjustState] = useState(null);
   const [isAdjusting, setIsAdjusting] = useState(false);
+
+  // Movements history pop-up state: null (closed) or { filterAccountId: 'all' | number }
+  const [historyModal, setHistoryModal] = useState(null);
 
   const showToast = (message, type = 'success') => setToast({ message, type });
 
@@ -129,6 +135,25 @@ export default function InvestmentsPage() {
   const hasAnyRate = accountsWithTotals.some((a) => a.rate);
   const totalPockets = accountsWithTotals.reduce((s, a) => s + (a.pockets?.length || 0), 0);
 
+  // Flatten all movements across banks for the history pop-up
+  const allMovements = accountsWithTotals
+    .flatMap((acc) =>
+      (acc.movements || []).map((m) => ({
+        ...m,
+        accountName: acc.name,
+        accountColor: acc.color,
+      }))
+    )
+    .sort((a, b) => {
+      const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      return diff !== 0 ? diff : b.id - a.id;
+    });
+
+  const filteredMovements =
+    historyModal?.filterAccountId && historyModal.filterAccountId !== 'all'
+      ? allMovements.filter((m) => m.accountId === historyModal.filterAccountId)
+      : allMovements;
+
   // ---------- Panel openers ----------
   const openNewAccount = () => {
     const nextColor = PALETTE_SWATCHES[accounts.length % PALETTE_SWATCHES.length].key;
@@ -147,12 +172,12 @@ export default function InvestmentsPage() {
   };
 
   const openNewPocket = (accountId) => {
-    setPocketForm({ name: '', amount: '' });
+    setPocketForm({ name: '', amount: '', date: todayIso() });
     setPanel({ kind: 'pocket', editingId: null, accountId });
   };
 
   const openEditPocket = (pocket) => {
-    setPocketForm({ name: pocket.name, amount: pocket.amount });
+    setPocketForm({ name: pocket.name, amount: pocket.amount, date: todayIso() });
     setPanel({ kind: 'pocket', editingId: pocket.id, accountId: pocket.accountId });
   };
 
@@ -198,6 +223,7 @@ export default function InvestmentsPage() {
           accountId: panel.accountId,
           name: pocketForm.name,
           amount: parseFloat(pocketForm.amount),
+          date: pocketForm.date || todayIso(),
         }),
       });
       if (!res.ok) {
@@ -252,10 +278,24 @@ export default function InvestmentsPage() {
     }
   };
 
+  const deleteMovement = async (movementId) => {
+    try {
+      const res = await fetch(`/api/investment-movements/${movementId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        showToast('Failed to delete movement', 'error');
+        return;
+      }
+      fetchAccounts();
+    } catch (err) {
+      console.error('Error deleting movement:', err);
+      showToast('Network error while deleting movement', 'error');
+    }
+  };
+
   const toggleAdjustPocket = (pocketId, mode) => {
     setAdjustState((prev) => {
       if (prev?.pocketId === pocketId && prev?.mode === mode) return null;
-      return { pocketId, mode, delta: '' };
+      return { pocketId, mode, delta: '', date: todayIso() };
     });
   };
 
@@ -286,6 +326,7 @@ export default function InvestmentsPage() {
         body: JSON.stringify({
           name: pocket.name,
           amount: Math.round(newAmount * 100) / 100,
+          date: adjustState.date || todayIso(),
         }),
       });
       if (!res.ok) {
@@ -331,17 +372,26 @@ export default function InvestmentsPage() {
   const panelAccountName = accounts.find((a) => a.id === panel?.accountId)?.name;
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-5 sm:space-y-6">
+    <div className="p-4 max-w-6xl mx-auto w-full space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3.5 sm:gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-caudal-text">Investments</h1>
-          <p className="text-xs sm:text-sm text-caudal-text-muted mt-0.5">Money saved in SOFIPOs, by bank and pocket</p>
+          <h1 className="text-xl sm:text-[23px] font-bold text-caudal-text">Investments</h1>
+          <p className="text-xs sm:text-[13.5px] text-caudal-text-muted mt-0.5">Money saved in SOFIPOs, by bank and pocket</p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
+            onClick={() => setHistoryModal({ filterAccountId: 'all' })}
+            className="px-3 py-1.5 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-caudal-text-muted hover:text-caudal-text transition-colors min-h-[36px] flex items-center gap-1.5 text-xs sm:text-[13.5px] font-medium"
+            title="View movements history"
+            aria-label="View movements history"
+          >
+            <InfoIcon className="w-4 h-4 text-caudal-green" />
+            <span className="hidden sm:inline">History</span>
+          </button>
+          <button
             onClick={toggleHideAmounts}
-            className="p-2.5 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-caudal-text-muted hover:text-caudal-text transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center"
+            className="p-2 bg-caudal-surface hover:bg-caudal-surface-alt border border-caudal-border rounded-lg text-caudal-text-muted hover:text-caudal-text transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
             title={hideAmounts ? 'Show amounts' : 'Hide amounts (Privacy mode)'}
             aria-label={hideAmounts ? 'Show amounts' : 'Hide amounts'}
           >
@@ -349,7 +399,7 @@ export default function InvestmentsPage() {
           </button>
           <button
             onClick={openNewAccount}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-caudal-green text-caudal-bg font-semibold rounded-lg hover:bg-caudal-green-dim transition-colors min-h-[38px]"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-1.5 bg-caudal-green text-caudal-bg text-[13.5px] font-semibold rounded-lg hover:bg-caudal-green-dim transition-colors min-h-[36px]"
           >
             <PlusIcon className="w-4 h-4" />
             New Bank
@@ -358,30 +408,30 @@ export default function InvestmentsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64 text-caudal-text-muted">
-          <div className="animate-pulse">Loading investments...</div>
+        <div className="flex justify-center items-center h-56 text-caudal-text-muted">
+          <div className="animate-pulse text-sm">Loading investments...</div>
         </div>
       ) : accounts.length === 0 ? (
         /* Empty state with quick setup */
-        <div className="bg-caudal-surface border border-dashed border-caudal-border rounded-xl p-8 sm:p-10 text-center">
-          <div className="w-12 h-12 rounded-full bg-caudal-green/10 text-caudal-green flex items-center justify-center mx-auto mb-3">
-            <TrendUpIcon className="w-6 h-6" />
+        <div className="bg-caudal-surface border border-dashed border-caudal-border rounded-xl p-6 sm:p-8 text-center">
+          <div className="w-10 h-10 rounded-full bg-caudal-green/10 text-caudal-green flex items-center justify-center mx-auto mb-2.5">
+            <TrendUpIcon className="w-5 h-5" />
           </div>
-          <p className="text-base font-bold text-caudal-text">No banks added yet</p>
-          <p className="text-sm text-caudal-text-muted mt-1 max-w-sm mx-auto">
+          <p className="text-sm sm:text-base font-bold text-caudal-text">No banks added yet</p>
+          <p className="text-xs text-caudal-text-muted mt-1 max-w-sm mx-auto">
             Add the SOFIPOs where you keep your money, then split it into pockets like Emergency or Vacation.
           </p>
-          <div className="flex flex-col sm:flex-row gap-2 justify-center mt-5">
+          <div className="flex flex-col sm:flex-row gap-2 justify-center mt-4">
             <button
               onClick={quickSetup}
               disabled={isSettingUp}
-              className="px-4 py-2.5 bg-caudal-green text-caudal-bg font-semibold rounded-lg hover:bg-caudal-green-dim transition-colors disabled:opacity-50"
+              className="px-3.5 py-2 bg-caudal-green text-caudal-bg text-xs sm:text-sm font-semibold rounded-lg hover:bg-caudal-green-dim transition-colors disabled:opacity-50"
             >
               {isSettingUp ? 'Creating...' : `Quick setup: ${DEFAULT_BANKS.map((b) => b.name).join(', ')}`}
             </button>
             <button
               onClick={openNewAccount}
-              className="px-4 py-2.5 bg-caudal-surface-alt border border-caudal-border text-caudal-text font-semibold rounded-lg hover:border-caudal-green/50 transition-colors"
+              className="px-3.5 py-2 bg-caudal-surface-alt border border-caudal-border text-caudal-text text-xs sm:text-sm font-semibold rounded-lg hover:border-caudal-green/50 transition-colors"
             >
               Add manually
             </button>
@@ -390,24 +440,26 @@ export default function InvestmentsPage() {
       ) : (
         <>
           {/* Total summary card */}
-          <div className="bg-caudal-surface border border-caudal-border rounded-xl p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div className="bg-caudal-surface border border-caudal-border rounded-xl p-4 sm:p-[18px]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <p className="text-xs text-caudal-text-muted uppercase tracking-wider font-medium">Total Invested</p>
-                <p className="text-3xl sm:text-4xl font-extrabold text-caudal-green mt-1">{money(grandTotal)}</p>
-                <p className="text-xs text-caudal-text-dim mt-1">
-                  {accounts.length} bank{accounts.length === 1 ? '' : 's'} · {totalPockets} pocket{totalPockets === 1 ? '' : 's'}
-                </p>
+                <div className="flex items-baseline gap-3 mt-1">
+                  <p className="text-2xl sm:text-3xl font-extrabold text-caudal-green leading-none">{money(grandTotal)}</p>
+                  <span className="text-xs text-caudal-text-dim">
+                    {accounts.length} bank{accounts.length === 1 ? '' : 's'} · {totalPockets} pocket{totalPockets === 1 ? '' : 's'}
+                  </span>
+                </div>
               </div>
               {hasAnyRate && (
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="px-3 py-2 rounded-lg bg-caudal-surface-alt border border-caudal-border/60">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="px-3 py-1.5 rounded-lg bg-caudal-surface-alt border border-caudal-border/60">
                     <p className="text-[11px] text-caudal-text-muted">Est. monthly yield</p>
-                    <p className="text-sm sm:text-base font-bold text-caudal-text">{money(totalAnnualYield / 12)}</p>
+                    <p className="text-sm sm:text-[15px] font-bold text-caudal-text mt-0.5">{money(totalAnnualYield / 12)}</p>
                   </div>
-                  <div className="px-3 py-2 rounded-lg bg-caudal-surface-alt border border-caudal-border/60">
+                  <div className="px-3 py-1.5 rounded-lg bg-caudal-surface-alt border border-caudal-border/60">
                     <p className="text-[11px] text-caudal-text-muted">Est. annual yield</p>
-                    <p className="text-sm sm:text-base font-bold text-caudal-text">{money(totalAnnualYield)}</p>
+                    <p className="text-sm sm:text-[15px] font-bold text-caudal-text mt-0.5">{money(totalAnnualYield)}</p>
                   </div>
                 </div>
               )}
@@ -415,8 +467,8 @@ export default function InvestmentsPage() {
 
             {/* Distribution bar by bank */}
             {grandTotal > 0 && (
-              <div className="mt-5">
-                <div className="h-3 w-full bg-caudal-surface-alt rounded-full overflow-hidden flex">
+              <div className="mt-3">
+                <div className="h-2 w-full bg-caudal-surface-alt rounded-full overflow-hidden flex">
                   {accountsWithTotals.map((a) =>
                     a.total > 0 ? (
                       <div
@@ -428,10 +480,10 @@ export default function InvestmentsPage() {
                     ) : null
                   )}
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2.5">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
                   {accountsWithTotals.map((a) => (
                     <span key={a.id} className="flex items-center gap-1.5 text-xs text-caudal-text-muted">
-                      <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: a.color }} />
+                      <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: a.color }} />
                       {a.name}
                       <span className="text-caudal-text-dim">
                         {grandTotal > 0 ? `${((a.total / grandTotal) * 100).toFixed(0)}%` : '0%'}
@@ -444,7 +496,7 @@ export default function InvestmentsPage() {
           </div>
 
           {/* Bank cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
             {accountsWithTotals.map((account) => (
               <div
                 key={account.id}
@@ -452,11 +504,11 @@ export default function InvestmentsPage() {
                 style={{ borderTopColor: account.color, borderTopWidth: 3 }}
               >
                 {/* Bank header */}
-                <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-caudal-border/60">
+                <div className="px-4 py-3 border-b border-caudal-border/60">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className="text-base font-bold text-caudal-text truncate">{account.name}</h2>
+                        <h2 className="text-[15.5px] font-bold text-caudal-text truncate">{account.name}</h2>
                         {account.rate ? (
                           <span
                             className="px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 border"
@@ -470,14 +522,24 @@ export default function InvestmentsPage() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="text-2xl font-extrabold mt-1" style={{ color: account.color }}>
+                      <p className="text-[23px] font-extrabold mt-0.5 leading-tight" style={{ color: account.color }}>
                         {money(account.total)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
+                        type="button"
+                        onClick={() => setHistoryModal({ filterAccountId: account.id })}
+                        className="p-1.5 text-caudal-text-muted hover:text-caudal-green hover:bg-caudal-surface-alt rounded-lg transition-colors"
+                        title={`View ${account.name} movements history`}
+                        aria-label={`View ${account.name} movements history`}
+                      >
+                        <InfoIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => openEditAccount(account)}
-                        className="p-2 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt rounded-lg transition-colors"
+                        className="p-1.5 text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface-alt rounded-lg transition-colors"
                         title="Edit bank"
                         aria-label={`Edit ${account.name}`}
                       >
@@ -488,10 +550,10 @@ export default function InvestmentsPage() {
 
                   {/* Yield cap progress bar */}
                   {account.hasCap && (
-                    <div className="mt-3 pt-2.5 border-t border-caudal-border/50">
-                      <div className="flex items-center justify-between text-[11px] mb-1.5 gap-2">
+                    <div className="mt-2.5 pt-2 border-t border-caudal-border/50">
+                      <div className="flex items-center justify-between text-[11.5px] mb-1.5 gap-2">
                         <span className="text-caudal-text-muted">
-                          Yield cap: <span className="font-semibold text-caudal-text">{money(account.maxAmount)}</span>
+                          Cap: <span className="font-semibold text-caudal-text">{money(account.maxAmount)}</span>
                         </span>
                         {account.capDiff > 0 ? (
                           <span className="text-caudal-text-dim font-medium">
@@ -505,7 +567,7 @@ export default function InvestmentsPage() {
                           </span>
                         )}
                       </div>
-                      <div className="h-1.5 w-full bg-caudal-surface-alt rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-caudal-surface-alt rounded-full overflow-hidden">
                         <div
                           className="h-full transition-all duration-500 rounded-full"
                           style={{
@@ -519,7 +581,7 @@ export default function InvestmentsPage() {
                 </div>
 
                 {/* Pockets */}
-                <div className="flex-1 px-2 sm:px-3 py-2">
+                <div className="px-3 py-2">
                   {account.pockets?.length > 0 ? (
                     <ul className="divide-y divide-caudal-border/50">
                       {account.pockets.map((pocket) => {
@@ -534,17 +596,17 @@ export default function InvestmentsPage() {
                           : null;
 
                         return (
-                          <li key={pocket.id} className="px-2 py-2.5">
+                          <li key={pocket.id} className="px-1.5 py-[7.5px]">
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-sm text-caudal-text truncate">{pocket.name}</span>
                               <div className="flex items-center gap-1 shrink-0">
-                                <span className="text-sm font-semibold text-caudal-text mr-1.5">
+                                <span className="text-sm font-semibold text-caudal-text mr-1">
                                   {money(pocket.amount)}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={() => toggleAdjustPocket(pocket.id, 'add')}
-                                  className={`w-7 h-7 rounded-md flex items-center justify-center border transition-colors ${
+                                  className={`w-[26px] h-[26px] rounded-md flex items-center justify-center border transition-colors ${
                                     isAdjustingThis && isAddMode
                                       ? 'bg-caudal-green text-caudal-bg border-caudal-green'
                                       : 'bg-caudal-surface-alt border-caudal-border text-caudal-green hover:border-caudal-green/60'
@@ -557,7 +619,7 @@ export default function InvestmentsPage() {
                                 <button
                                   type="button"
                                   onClick={() => toggleAdjustPocket(pocket.id, 'subtract')}
-                                  className={`w-7 h-7 rounded-md flex items-center justify-center border transition-colors ${
+                                  className={`w-[26px] h-[26px] rounded-md flex items-center justify-center border transition-colors ${
                                     isAdjustingThis && !isAddMode
                                       ? 'bg-caudal-orange text-caudal-text border-caudal-orange'
                                       : 'bg-caudal-surface-alt border-caudal-border text-caudal-orange hover:border-caudal-orange/60'
@@ -570,7 +632,7 @@ export default function InvestmentsPage() {
                                 <button
                                   type="button"
                                   onClick={() => openEditPocket(pocket)}
-                                  className="w-7 h-7 rounded-md flex items-center justify-center text-caudal-text-dim hover:text-caudal-text hover:bg-caudal-surface-alt transition-colors"
+                                  className="w-[26px] h-[26px] rounded-md flex items-center justify-center text-caudal-text-dim hover:text-caudal-text hover:bg-caudal-surface-alt transition-colors"
                                   title={`Edit ${pocket.name}`}
                                   aria-label={`Edit ${pocket.name}`}
                                 >
@@ -579,64 +641,74 @@ export default function InvestmentsPage() {
                               </div>
                             </div>
 
-                            {/* Inline quick + / - bar */}
+                            {/* Inline quick + / - bar with date */}
                             {isAdjustingThis && (
                               <form
                                 onSubmit={(e) => submitAdjustPocket(e, pocket)}
-                                className="mt-2 p-2 rounded-lg bg-caudal-surface-alt border border-caudal-border flex items-center gap-2"
+                                className="mt-2 p-2 rounded-lg bg-caudal-surface-alt border border-caudal-border space-y-1.5"
                               >
-                                <span
-                                  className={`text-xs font-bold px-1.5 py-0.5 rounded shrink-0 ${
-                                    isAddMode
-                                      ? 'bg-caudal-green/15 text-caudal-green'
-                                      : 'bg-caudal-orange/15 text-caudal-orange'
-                                  }`}
-                                >
-                                  {isAddMode ? '+ Add' : '− Remove'}
-                                </span>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  min="0.01"
-                                  inputMode="decimal"
-                                  autoFocus
-                                  placeholder="Amount..."
-                                  value={adjustState.delta}
-                                  onChange={(e) => setAdjustState({ ...adjustState, delta: e.target.value })}
-                                  className="w-full min-w-0 bg-caudal-surface border border-caudal-border rounded px-2.5 py-1 text-xs text-caudal-text focus:outline-none focus:border-caudal-green"
-                                  required
-                                />
-                                {previewAmount !== null && (
+                                <div className="flex items-center gap-1.5">
                                   <span
-                                    className={`text-[11px] font-semibold shrink-0 hidden sm:inline ${
-                                      previewAmount < 0 ? 'text-caudal-error' : 'text-caudal-text-muted'
+                                    className={`text-[11px] font-bold px-2 py-1 rounded shrink-0 ${
+                                      isAddMode
+                                        ? 'bg-caudal-green/15 text-caudal-green'
+                                        : 'bg-caudal-orange/15 text-caudal-orange'
                                     }`}
                                   >
-                                    → {formatMoney(Math.max(0, previewAmount))}
+                                    {isAddMode ? '+ Add' : '− Remove'}
                                   </span>
-                                )}
-                                <button
-                                  type="submit"
-                                  disabled={isAdjusting}
-                                  className={`p-1.5 rounded font-semibold transition-colors shrink-0 ${
-                                    isAddMode
-                                      ? 'bg-caudal-green text-caudal-bg hover:bg-caudal-green-dim'
-                                      : 'bg-caudal-orange text-caudal-text hover:bg-caudal-orange-dim'
-                                  }`}
-                                  title="Apply"
-                                  aria-label="Apply amount change"
-                                >
-                                  <CheckIcon className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setAdjustState(null)}
-                                  className="p-1.5 rounded text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface transition-colors shrink-0"
-                                  title="Cancel"
-                                  aria-label="Cancel"
-                                >
-                                  <XMarkIcon className="w-3.5 h-3.5" />
-                                </button>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    inputMode="decimal"
+                                    autoFocus
+                                    placeholder="Amount..."
+                                    value={adjustState.delta}
+                                    onChange={(e) => setAdjustState({ ...adjustState, delta: e.target.value })}
+                                    className="w-full min-w-0 bg-caudal-surface border border-caudal-border rounded px-2.5 py-1 text-xs text-caudal-text focus:outline-none focus:border-caudal-green"
+                                    required
+                                  />
+                                  <button
+                                    type="submit"
+                                    disabled={isAdjusting}
+                                    className={`p-1.5 rounded font-semibold transition-colors shrink-0 ${
+                                      isAddMode
+                                        ? 'bg-caudal-green text-caudal-bg hover:bg-caudal-green-dim'
+                                        : 'bg-caudal-orange text-caudal-text hover:bg-caudal-orange-dim'
+                                    }`}
+                                    title="Apply"
+                                    aria-label="Apply amount change"
+                                  >
+                                    <CheckIcon className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setAdjustState(null)}
+                                    className="p-1.5 rounded text-caudal-text-muted hover:text-caudal-text hover:bg-caudal-surface transition-colors shrink-0"
+                                    title="Cancel"
+                                    aria-label="Cancel"
+                                  >
+                                    <XMarkIcon className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <div className="flex items-center justify-between gap-2 text-[11px]">
+                                  <input
+                                    type="date"
+                                    value={adjustState.date}
+                                    onChange={(e) => setAdjustState({ ...adjustState, date: e.target.value })}
+                                    className="bg-caudal-surface border border-caudal-border rounded px-2 py-0.5 text-xs text-caudal-text-muted focus:outline-none focus:border-caudal-green"
+                                  />
+                                  {previewAmount !== null && (
+                                    <span
+                                      className={`font-semibold truncate ${
+                                        previewAmount < 0 ? 'text-caudal-error' : 'text-caudal-text-muted'
+                                      }`}
+                                    >
+                                      New: {formatMoney(Math.max(0, previewAmount))}
+                                    </span>
+                                  )}
+                                </div>
                               </form>
                             )}
                           </li>
@@ -644,12 +716,12 @@ export default function InvestmentsPage() {
                       })}
                     </ul>
                   ) : (
-                    <p className="text-xs text-caudal-text-dim text-center py-4">No pockets yet</p>
+                    <p className="text-xs text-caudal-text-dim text-center py-3">No pockets yet</p>
                   )}
 
                   <button
                     onClick={() => openNewPocket(account.id)}
-                    className="w-full mt-1 mb-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-caudal-border text-xs font-semibold text-caudal-text-muted hover:text-caudal-green hover:border-caudal-green/50 transition-colors"
+                    className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-caudal-border text-xs font-semibold text-caudal-text-muted hover:text-caudal-green hover:border-caudal-green/50 transition-colors"
                   >
                     <PlusIcon className="w-3.5 h-3.5" />
                     Add pocket
@@ -658,7 +730,7 @@ export default function InvestmentsPage() {
 
                 {/* Yield footer */}
                 {account.rate ? (
-                  <div className="px-4 sm:px-5 py-2.5 border-t border-caudal-border/60 bg-caudal-surface-alt/40 flex items-center justify-between text-xs text-caudal-text-dim">
+                  <div className="px-4 py-2 border-t border-caudal-border/60 bg-caudal-surface-alt/40 flex items-center justify-between text-xs text-caudal-text-dim">
                     <span>
                       Est. yield{account.hasCap && account.total > account.maxAmount ? ' (capped)' : ''}
                     </span>
@@ -670,13 +742,122 @@ export default function InvestmentsPage() {
               </div>
             ))}
           </div>
-
-          {hasAnyRate && (
-            <p className="text-[11px] text-caudal-text-dim text-center">
-              Yields are gross estimates based on the annual rate and yield cap you entered. Balances show only the amounts you put in.
-            </p>
-          )}
         </>
+      )}
+
+      {/* Movements History Pop-Up Modal (opened via the 'i' button) */}
+      {historyModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setHistoryModal(null)}
+        >
+          <div
+            className="w-full max-w-md bg-caudal-surface border border-caudal-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80dvh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-4 py-3 border-b border-caudal-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <InfoIcon className="w-4 h-4 text-caudal-green" />
+                <h3 className="text-sm sm:text-base font-bold text-caudal-text">Movements History</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHistoryModal(null)}
+                className="p-1 text-caudal-text-muted hover:text-caudal-text rounded-lg hover:bg-caudal-surface-alt transition-colors"
+                aria-label="Close history"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Bank filter pills */}
+            <div className="px-4 py-2.5 bg-caudal-surface-alt/60 border-b border-caudal-border/60 flex items-center gap-1.5 overflow-x-auto touch-scroll">
+              <button
+                type="button"
+                onClick={() => setHistoryModal({ filterAccountId: 'all' })}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors shrink-0 border ${
+                  historyModal.filterAccountId === 'all'
+                    ? 'bg-caudal-green text-caudal-bg border-caudal-green'
+                    : 'bg-caudal-surface text-caudal-text-muted border-caudal-border hover:text-caudal-text'
+                }`}
+              >
+                All ({allMovements.length})
+              </button>
+              {accountsWithTotals.map((acc) => {
+                const isSelected = historyModal.filterAccountId === acc.id;
+                return (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => setHistoryModal({ filterAccountId: acc.id })}
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors shrink-0 border flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-caudal-surface text-caudal-text border-caudal-text'
+                        : 'bg-caudal-surface text-caudal-text-muted border-caudal-border hover:text-caudal-text'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: acc.color }} />
+                    <span>{acc.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Movements list */}
+            <div className="flex-1 overflow-y-auto divide-y divide-caudal-border/60 px-4 py-1 touch-scroll">
+              {filteredMovements.length === 0 ? (
+                <p className="text-xs text-caudal-text-dim text-center py-8">
+                  No movements recorded yet. Use + or − on any pocket to log additions and withdrawals.
+                </p>
+              ) : (
+                filteredMovements.map((m) => {
+                  const isDeposit = m.type === 'deposit';
+                  return (
+                    <div key={m.id} className="py-2.5 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: m.accountColor }}
+                          />
+                          <span className="text-xs font-semibold text-caudal-text truncate">
+                            {m.pocketName}
+                          </span>
+                          <span className="text-[11px] text-caudal-text-dim truncate">
+                            · {m.accountName}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-caudal-text-muted mt-0.5 pl-3.5">
+                          {formatDate(m.date)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className={`text-xs sm:text-sm font-bold ${
+                            isDeposit ? 'text-caudal-green' : 'text-caudal-orange'
+                          }`}
+                        >
+                          {isDeposit ? '+' : '−'}
+                          {money(m.amount)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => deleteMovement(m.id)}
+                          className="p-1 text-caudal-text-dim hover:text-caudal-error rounded transition-colors"
+                          title="Remove from history"
+                          aria-label="Remove from history"
+                        >
+                          <XMarkIcon className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Bank form */}
@@ -807,6 +988,16 @@ export default function InvestmentsPage() {
               placeholder="0.00"
               value={pocketForm.amount}
               onChange={(e) => setPocketForm({ ...pocketForm, amount: e.target.value })}
+              className={inputClass}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Movement date</label>
+            <input
+              type="date"
+              value={pocketForm.date}
+              onChange={(e) => setPocketForm({ ...pocketForm, date: e.target.value })}
               className={inputClass}
               required
             />

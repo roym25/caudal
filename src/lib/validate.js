@@ -245,6 +245,14 @@ export function validateInvestmentPocket(body, { requireAccount = true } = {}) {
     errors.push('amount must be a non-negative number')
   }
 
+  let movementDate = null
+  if (body.date !== undefined && body.date !== null && body.date !== '') {
+    movementDate = parseDate(body.date)
+    if (!movementDate) {
+      errors.push('date is not a valid date')
+    }
+  }
+
   if (errors.length > 0) return { valid: false, errors }
 
   const data = {
@@ -253,6 +261,6 @@ export function validateInvestmentPocket(body, { requireAccount = true } = {}) {
   }
   if (requireAccount) data.accountId = accountId
 
-  return { valid: true, data }
+  return { valid: true, data, movementDate }
 }
 

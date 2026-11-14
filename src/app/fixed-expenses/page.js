@@ -281,28 +281,28 @@ export default function FixedExpensesPage() {
   const annualTotal = fixedExpenses.reduce((acc, expense) => acc + getTotalPaid(expense), 0);
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-5 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
-        <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2 sm:gap-4">
+    <div className="p-4 max-w-6xl mx-auto w-full space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2 sm:gap-3.5">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-caudal-text">Fixed Expenses</h1>
-            <p className="text-xs sm:text-sm text-caudal-text-muted mt-0.5">Recurring monthly bills & subscriptions</p>
+            <h1 className="text-xl sm:text-[23px] font-bold text-caudal-text">Fixed Expenses</h1>
+            <p className="text-xs sm:text-[13.5px] text-caudal-text-muted mt-0.5">Recurring monthly bills & subscriptions</p>
           </div>
           <div className="flex items-center gap-1.5 ml-auto sm:ml-2">
             <button
               onClick={() => setCurrentYear(y => y - 1)}
-              className="p-2 sm:p-1.5 bg-caudal-surface hover:bg-caudal-surface-alt rounded-lg border border-caudal-border text-caudal-text-muted hover:text-caudal-text transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+              className="p-1.5 bg-caudal-surface hover:bg-caudal-surface-alt rounded-lg border border-caudal-border text-caudal-text-muted hover:text-caudal-text transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center"
               title="Previous year"
               aria-label="Previous year"
             >
               <ChevronLeftIcon className="w-4 h-4" />
             </button>
-            <span className="text-sm sm:text-base font-bold min-w-[3.5rem] text-center text-caudal-text">
+            <span className="text-sm sm:text-[15.5px] font-bold min-w-[3.25rem] text-center text-caudal-text">
               {currentYear}
             </span>
             <button
               onClick={() => setCurrentYear(y => y + 1)}
-              className="p-2 sm:p-1.5 bg-caudal-surface hover:bg-caudal-surface-alt rounded-lg border border-caudal-border text-caudal-text-muted hover:text-caudal-text transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+              className="p-1.5 bg-caudal-surface hover:bg-caudal-surface-alt rounded-lg border border-caudal-border text-caudal-text-muted hover:text-caudal-text transition-colors min-w-[34px] min-h-[34px] flex items-center justify-center"
               title="Next year"
               aria-label="Next year"
             >
@@ -313,7 +313,7 @@ export default function FixedExpensesPage() {
 
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-caudal-green text-caudal-bg font-semibold rounded-lg hover:bg-caudal-green-dim transition-colors w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-3.5 py-1.5 bg-caudal-green text-caudal-bg font-semibold text-[13.5px] rounded-lg hover:bg-caudal-green-dim transition-colors min-h-[36px] w-full sm:w-auto"
         >
           <PlusIcon className="w-4 h-4" />
           New Fixed Expense
@@ -380,23 +380,23 @@ export default function FixedExpensesPage() {
         />
       ) : (
         <div className="bg-caudal-surface border border-caudal-border rounded-xl overflow-hidden overflow-x-auto touch-scroll">
-          <table className="w-full text-sm text-left whitespace-nowrap min-w-[950px]">
+          <table className="w-full text-sm text-left whitespace-nowrap min-w-[930px]">
             <thead className="bg-caudal-surface-alt text-caudal-text-muted uppercase text-xs tracking-wider">
               <tr>
-                <th className="sticky left-0 z-20 bg-caudal-surface-alt px-3.5 sm:px-4 py-3 font-medium shadow-[3px_0_6px_-2px_rgba(0,0,0,0.6)]">Expense</th>
-                <th className="px-4 py-3 text-right font-medium">Cost</th>
-                <th className="px-3 py-3 text-center font-medium">Due Day</th>
+                <th className="sticky left-0 z-20 bg-caudal-surface-alt px-3.5 py-2.5 font-medium shadow-[3px_0_6px_-2px_rgba(0,0,0,0.6)]">Expense</th>
+                <th className="px-3.5 py-2.5 text-right font-medium">Cost</th>
+                <th className="px-3 py-2.5 text-center font-medium">Due Day</th>
                 {MONTHS.map((month) => (
-                  <th key={month} className="px-2 py-3 text-center font-medium">{month}</th>
+                  <th key={month} className="px-1.5 py-2.5 text-center font-medium">{month}</th>
                 ))}
-                <th className="px-4 py-3 text-right font-medium text-caudal-green">Total Paid</th>
-                <th className="px-4 py-3 text-center font-medium w-24">Actions</th>
+                <th className="px-3.5 py-2.5 text-right font-medium text-caudal-green">Total Paid</th>
+                <th className="px-3.5 py-2.5 text-center font-medium w-22">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-caudal-border text-caudal-text">
               {fixedExpenses.map((expense) => (
                 <tr key={expense.id} className="hover:bg-caudal-surface-alt/50 transition-colors">
-                  <td className="sticky left-0 z-10 bg-caudal-surface px-3.5 sm:px-4 py-3 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.6)]">
+                  <td className="sticky left-0 z-10 bg-caudal-surface px-3.5 py-2 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.6)]">
                     {editingId === expense.id ? (
                       <input
                         value={editForm.name}
@@ -407,7 +407,7 @@ export default function FixedExpensesPage() {
                       <span className="font-medium text-caudal-text">{expense.name}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-medium">
+                  <td className="px-3.5 py-2 text-right font-medium">
                     {editingId === expense.id ? (
                       <input
                         type="number"
@@ -419,7 +419,7 @@ export default function FixedExpensesPage() {
                       formatMoney(expense.cost)
                     )}
                   </td>
-                  <td className="px-3 py-3 text-center">
+                  <td className="px-3 py-2 text-center">
                     {editingId === expense.id ? (
                       <input
                         type="number"
@@ -442,11 +442,11 @@ export default function FixedExpensesPage() {
                     const hasCustomAmount = isPaid && payment?.amount !== null && payment?.amount !== undefined && payment.amount !== expense.cost;
 
                     return (
-                      <td key={month} className="px-1.5 py-2.5 text-center">
+                      <td key={month} className="px-1.5 py-1.5 text-center">
                         <button
                           onClick={() => handleMonthClick(expense, monthIndex)}
                           onContextMenu={(e) => handleMonthContextMenu(e, expense, monthIndex)}
-                          className={`relative w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center mx-auto ${
+                          className={`relative w-[26px] h-[26px] rounded-full text-xs font-bold transition-all flex items-center justify-center mx-auto ${
                             isPaid
                               ? 'bg-caudal-green text-caudal-bg hover:bg-caudal-green-dim scale-105'
                               : 'bg-caudal-surface-alt border border-caudal-border text-caudal-text-dim hover:border-caudal-text-muted hover:text-caudal-text'
@@ -473,10 +473,10 @@ export default function FixedExpensesPage() {
                       </td>
                     );
                   })}
-                  <td className="px-4 py-3 text-right font-bold text-caudal-green">
+                  <td className="px-3.5 py-2 text-right font-bold text-caudal-green">
                     {formatMoney(getTotalPaid(expense))}
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3.5 py-2 text-center">
                     {editingId === expense.id ? (
                       <div className="flex items-center justify-center gap-1.5">
                         <button
@@ -518,10 +518,10 @@ export default function FixedExpensesPage() {
             </tbody>
             <tfoot>
               <tr className="bg-caudal-surface-alt text-caudal-text font-semibold border-t border-caudal-border">
-                <td colSpan={3 + MONTHS.length} className="px-4 py-3 text-right text-xs uppercase tracking-wider text-caudal-text-muted">
+                <td colSpan={3 + MONTHS.length} className="px-3.5 py-2.5 text-right text-xs uppercase tracking-wider text-caudal-text-muted">
                   Annual Total Paid:
                 </td>
-                <td className="px-4 py-3 text-right font-bold text-caudal-green">
+                <td className="px-3.5 py-2.5 text-right font-bold text-caudal-green">
                   {formatMoney(annualTotal)}
                 </td>
                 <td></td>
