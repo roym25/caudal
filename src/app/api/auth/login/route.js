@@ -6,6 +6,14 @@ import {
   isPinProtectionEnabled,
 } from '@/lib/auth';
 
+export async function GET() {
+  const expectedPin = String(process.env.CAUDAL_ACCESS_PIN || '').trim();
+  return NextResponse.json({
+    protectionEnabled: isPinProtectionEnabled(),
+    pinLength: expectedPin.length > 0 ? expectedPin.length : 4,
+  });
+}
+
 export async function POST(request) {
   try {
     if (!isPinProtectionEnabled()) {
@@ -31,7 +39,7 @@ export async function POST(request) {
     });
 
     return response;
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
   }
 }
