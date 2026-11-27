@@ -63,9 +63,9 @@ export default function InvestmentsPage() {
   // Panel state: { kind: 'account' | 'pocket', editingId, accountId }
   const [panel, setPanel] = useState(null);
   const [accountForm, setAccountForm] = useState({ name: '', rate: '', maxAmount: '', color: 'green' });
-  const [pocketForm, setPocketForm] = useState({ name: '', amount: '', date: todayIso() });
+  const [pocketForm, setPocketForm] = useState({ name: '', amount: '', date: todayIso(), note: '' });
 
-  // Quick +/- inline adjustment state: { pocketId, mode: 'add' | 'subtract', delta: '', date: 'YYYY-MM-DD' }
+  // Quick +/- inline adjustment state: { pocketId, mode: 'add' | 'subtract', delta: '', date: 'YYYY-MM-DD', note: '' }
   const [adjustState, setAdjustState] = useState(null);
   const [isAdjusting, setIsAdjusting] = useState(false);
 
@@ -172,12 +172,12 @@ export default function InvestmentsPage() {
   };
 
   const openNewPocket = (accountId) => {
-    setPocketForm({ name: '', amount: '', date: todayIso() });
+    setPocketForm({ name: '', amount: '', date: todayIso(), note: '' });
     setPanel({ kind: 'pocket', editingId: null, accountId });
   };
 
   const openEditPocket = (pocket) => {
-    setPocketForm({ name: pocket.name, amount: pocket.amount, date: todayIso() });
+    setPocketForm({ name: pocket.name, amount: pocket.amount, date: todayIso(), note: '' });
     setPanel({ kind: 'pocket', editingId: pocket.id, accountId: pocket.accountId });
   };
 
@@ -224,6 +224,7 @@ export default function InvestmentsPage() {
           name: pocketForm.name,
           amount: parseFloat(pocketForm.amount),
           date: pocketForm.date || todayIso(),
+          note: pocketForm.note || null,
         }),
       });
       if (!res.ok) {
@@ -295,7 +296,7 @@ export default function InvestmentsPage() {
   const toggleAdjustPocket = (pocketId, mode) => {
     setAdjustState((prev) => {
       if (prev?.pocketId === pocketId && prev?.mode === mode) return null;
-      return { pocketId, mode, delta: '', date: todayIso() };
+      return { pocketId, mode, delta: '', date: todayIso(), note: '' };
     });
   };
 
@@ -327,6 +328,7 @@ export default function InvestmentsPage() {
           name: pocket.name,
           amount: Math.round(newAmount * 100) / 100,
           date: adjustState.date || todayIso(),
+          note: adjustState.note || null,
         }),
       });
       if (!res.ok) {
@@ -641,7 +643,7 @@ export default function InvestmentsPage() {
                               </div>
                             </div>
 
-                            {/* Inline quick + / - bar with date */}
+                            {/* Inline quick + / - bar with date and optional note/reason */}
                             {isAdjustingThis && (
                               <form
                                 onSubmit={(e) => submitAdjustPocket(e, pocket)}
@@ -692,6 +694,13 @@ export default function InvestmentsPage() {
                                     <XMarkIcon className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
+                                <input
+                                  type="text"
+                                  placeholder={isAddMode ? 'Note / source (optional)...' : 'Reason for withdrawal (optional)...'}
+                                  value={adjustState.note}
+                                  onChange={(e) => setAdjustState({ ...adjustState, note: e.target.value })}
+                                  className="w-full bg-caudal-surface border border-caudal-border rounded px-2.5 py-1 text-xs text-caudal-text placeholder:text-caudal-text-dim focus:outline-none focus:border-caudal-green"
+                                />
                                 <div className="flex items-center justify-between gap-2 text-[11px]">
                                   <input
                                     type="date"
@@ -814,7 +823,7 @@ export default function InvestmentsPage() {
                 filteredMovements.map((m) => {
                   const isDeposit = m.type === 'deposit';
                   return (
-                    <div key={m.id} className="py-2.5 flex items-center justify-between gap-2">
+                    <div key={m.id} className="py-2.5 flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span
@@ -828,7 +837,12 @@ export default function InvestmentsPage() {
                             · {m.accountName}
                           </span>
                         </div>
-                        <p className="text-[11px] text-caudal-text-muted mt-0.5 pl-3.5">
+                        {m.note && (
+                          <p className="text-xs text-caudal-text-muted mt-0.5 pl-3.5 break-words">
+                            “{m.note}”
+                          </p>
+                        )}
+                        <p className="text-[11px] text-caudal-text-dim mt-0.5 pl-3.5">
                           {formatDate(m.date)}
                         </p>
                       </div>
@@ -1000,6 +1014,16 @@ export default function InvestmentsPage() {
               onChange={(e) => setPocketForm({ ...pocketForm, date: e.target.value })}
               className={inputClass}
               required
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-caudal-text-muted mb-1">Note / Reason (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. Initial deposit, Car repair, Bonus"
+              value={pocketForm.note}
+              onChange={(e) => setPocketForm({ ...pocketForm, note: e.target.value })}
+              className={inputClass}
             />
           </div>
           <div className="pt-4 space-y-2.5">

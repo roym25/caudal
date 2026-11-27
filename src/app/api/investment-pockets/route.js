@@ -22,6 +22,7 @@ export async function POST(request) {
           pocketName: pocket.name,
           type: "deposit",
           amount: pocket.amount,
+          note: validation.movementNote || null,
           date: validation.movementDate || new Date(),
         },
       })

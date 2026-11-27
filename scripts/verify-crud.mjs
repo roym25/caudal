@@ -239,6 +239,15 @@ async function runTests() {
     console.log('   ✓ Created bank with 3 pockets, total = 24000')
 
     const firstPocket = withPockets.pockets[0]
+    const pocketWithNote = validateInvestmentPocket({
+      accountId: account.id,
+      name: firstPocket.name,
+      amount: 12000,
+      note: '  Bono quincenal  ',
+    })
+    if (!pocketWithNote.valid || pocketWithNote.movementNote !== 'Bono quincenal') {
+      throw new Error('validateInvestmentPocket did not parse movementNote correctly')
+    }
     await prisma.investmentMovement.create({
       data: {
         accountId: account.id,
@@ -246,6 +255,7 @@ async function runTests() {
         pocketName: firstPocket.name,
         type: 'deposit',
         amount: 2000,
+        note: pocketWithNote.movementNote,
         date: new Date('2026-11-12T12:00:00.000Z'),
       },
     })

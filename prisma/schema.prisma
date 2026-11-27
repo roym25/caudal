@@ -87,6 +87,7 @@ model InvestmentMovement {
   pocketName String
   type       String            // "deposit" | "withdrawal"
   amount     Float
+  note       String?           // Comentario o motivo del movimiento (opcional)
   date       DateTime          @default(now())
   createdAt  DateTime          @default(now())
 }

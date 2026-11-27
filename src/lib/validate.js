@@ -253,6 +253,11 @@ export function validateInvestmentPocket(body, { requireAccount = true } = {}) {
     }
   }
 
+  const movementNote =
+    body.note !== undefined && body.note !== null && String(body.note).trim() !== ''
+      ? String(body.note).trim()
+      : null
+
   if (errors.length > 0) return { valid: false, errors }
 
   const data = {
@@ -261,6 +266,6 @@ export function validateInvestmentPocket(body, { requireAccount = true } = {}) {
   }
   if (requireAccount) data.accountId = accountId
 
-  return { valid: true, data, movementDate }
+  return { valid: true, data, movementDate, movementNote }
 }
 

@@ -37,6 +37,7 @@ export async function PUT(request, { params }) {
           pocketName: pocket.name,
           type: diff > 0 ? "deposit" : "withdrawal",
           amount: Math.abs(diff),
+          note: validation.movementNote || null,
           date: validation.movementDate || new Date(),
         },
       })
