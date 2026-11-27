@@ -40,6 +40,6 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-icon.png|caudal-logo.png|wave-bg.jpg|wave-bg.png|manifest.webmanifest|manifest.json).*)',
+    '/((?!_next/static|_next/image|favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-icon.png|icon-192.png|icon-512.png|caudal-logo.png|wave-bg.jpg|wave-bg.png|manifest.webmanifest|manifest.json).*)',
   ],
 };

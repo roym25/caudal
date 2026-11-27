@@ -28,7 +28,7 @@ export const metadata = {
     ],
     shortcut: '/favicon-32x32.png',
     apple: [
-      { url: '/caudal-logo.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
 };
