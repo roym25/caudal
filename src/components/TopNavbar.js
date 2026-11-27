@@ -1,8 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { LockClosedIcon } from '@/components/icons';
 
 const routeTitles = {
   '/': 'Dashboard',
@@ -14,11 +15,20 @@ const routeTitles = {
 
 export default function TopNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const currentTitle = routeTitles[pathname] || 'Dashboard';
 
   useEffect(() => {
     document.title = `Caudal | ${currentTitle}`;
   }, [currentTitle]);
+
+  const handleLock = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.replace('/login');
+      router.refresh();
+    } catch {}
+  };
 
   return (
     <header
@@ -46,6 +56,15 @@ export default function TopNavbar() {
         <span className="text-xs text-caudal-text-muted hidden sm:inline-block font-medium">
           {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
         </span>
+        <button
+          type="button"
+          onClick={handleLock}
+          className="p-1.5 rounded-lg bg-caudal-surface-alt/70 hover:bg-caudal-surface-alt border border-caudal-border text-caudal-text-muted hover:text-caudal-green transition-colors"
+          title="Lock Caudal"
+          aria-label="Lock Caudal"
+        >
+          <LockClosedIcon className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );

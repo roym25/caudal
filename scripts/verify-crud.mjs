@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import prisma from '../src/lib/prisma.js'
 import { validatePayroll, validateFixedPayment, validateInvestmentAccount, validateInvestmentPocket } from '../src/lib/validate.js'
+import { createSessionToken, verifySessionToken } from '../src/lib/auth.js'
 
 async function runTests() {
   console.log('🧪 Running Caudal Database & Model Integration Tests...\n')
@@ -314,6 +315,33 @@ async function runTests() {
     console.log('   ✓ Payroll savingsPaidAt lifecycle verified')
   } catch (err) {
     console.error('   ❌ Savings cycle test failed:', err.message)
+    failed++
+  }
+
+  // Test: PIN session token signing and verification
+  try {
+    console.log('\nTesting PIN Auth HMAC Session Token...')
+    const prevPin = process.env.CAUDAL_ACCESS_PIN
+    process.env.CAUDAL_ACCESS_PIN = '1234'
+
+    const token = await createSessionToken()
+    const valid = await verifySessionToken(token)
+    if (!valid) throw new Error('Generated session token did not verify')
+
+    const tampered = await verifySessionToken(token + '0')
+    if (tampered) throw new Error('Tampered session token should be rejected')
+
+    // Changing PIN must invalidate tokens signed with old PIN
+    process.env.CAUDAL_ACCESS_PIN = '9999'
+    const validAfterPinChange = await verifySessionToken(token)
+    if (validAfterPinChange) throw new Error('Token should be invalidated when PIN changes')
+
+    if (prevPin === undefined) delete process.env.CAUDAL_ACCESS_PIN
+    else process.env.CAUDAL_ACCESS_PIN = prevPin
+
+    console.log('   ✓ PIN session token signing, tampering rejection, and PIN-change invalidation verified')
+  } catch (err) {
+    console.error('   ❌ PIN Auth test failed:', err.message)
     failed++
   }
 

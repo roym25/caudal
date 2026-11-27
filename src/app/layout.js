@@ -1,8 +1,6 @@
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import Sidebar from '@/components/Sidebar';
-import TopNavbar from '@/components/TopNavbar';
-import BottomNavbar from '@/components/BottomNavbar';
+import AppShell from '@/components/AppShell';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -16,7 +14,12 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: 'Caudal | Dashboard',
-  description: 'Personal finance tracker',
+  description: 'Personal finance & SOFIPO investments tracker',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Caudal',
+  },
   icons: {
     icon: [
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
@@ -25,7 +28,7 @@ export const metadata = {
     ],
     shortcut: '/favicon-32x32.png',
     apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/caudal-logo.png', sizes: '180x180', type: 'image/png' },
     ],
   },
 };
@@ -42,14 +45,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex text-caudal-text">
-        <Sidebar />
-        <div className="flex-1 min-h-[100dvh] md:ml-60 w-full flex flex-col">
-          <TopNavbar />
-          <main className="flex-1 overflow-y-auto w-full pb-20 md:pb-6">
-            {children}
-          </main>
-        </div>
-        <BottomNavbar />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
